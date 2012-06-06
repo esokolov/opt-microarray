@@ -1,0 +1,10 @@
+1. Открыть консоль git'а
+2. Перейти в папку на своем компьютере, где будет все храниться
+3. git clone https://github.com/esokolov/opt-microarray.git
+4. cd opt-microarray
+5. Делаем все что хотим
+6. git add .
+7. git commit -a
+8. В открывшемся редакторе нажать INSERT, написать что-нибудь, затем нажать ESCAPE и ввести :wq
+9. git push
+10. Для скачивания последних изменений с сервера: git pull
