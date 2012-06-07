@@ -1,0 +1,26 @@
+probes                                  <- read.table("HuGene-1_0-st-v1.hg19.probe.tab", header=T, sep="\t")
+probes                                  <- probes[-which(probes$category == "category"),]
+probes$Probe.ID 			<- as.numeric(levels(probes$Probe.ID)[probes$Probe.ID])
+probes$Transcript.Cluster.ID		<- as.numeric(levels(probes$Transcript.Cluster.ID)[probes$Transcript.Cluster.ID])
+probes$probe.x 				<- as.numeric(levels(probes$probe.x)[probes$probe.x])
+probes$probe.y 				<- as.numeric(levels(probes$probe.y)[probes$probe.y])
+probes$assembly 			<- as.factor(as.character(probes$assembly))
+probes$seqname 				<- as.factor(as.character(probes$seqname))
+probes$start[which(probes$start=="---")]<- NA
+probes$start				<- as.numeric(levels(probes$start)[probes$start])
+probes$stop[which(probes$stop=="---")]	<- NA
+probes$stop 				<- as.numeric(levels(probes$stop)[probes$stop])
+probes$strand 				<- as.factor(as.character(probes$strand))
+probes$probe.sequence			<- as.character(probes$probe.sequence)
+probes$target.strandedness		<- as.factor(as.character(probes$target.strandedness))
+probes$category             		<- as.factor(as.character(probes$category))
+
+probes					<- probes[-which(probes$category=="rescue->FLmRNA->unmapped"),]
+probes					<- probes[-which(probes$category=="control->bgp->antigenomic"),]
+probes					<- probes[-which(probes$category=="normgene->exon"),]
+probes					<- probes[-which(probes$category=="normgene->intron"),]
+probes 					<- probes[-which(probes$Probe.ID %in% subset(probes, category=="control->affx")$Probe.ID),]
+
+probes					<- probes[,c(1,2,10)]
+tmp					<- table(as.factor(probes$Probe.ID))
+probes_unique 				<- subset(probes, ! Probe.ID %in% as.numeric(unlist(dimnames(tmp[tmp>1]))))
