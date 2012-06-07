@@ -1,0 +1,53 @@
+library(xps)
+library(reshape)
+
+### define directories:
+# directory containing Affymetrix annotation files
+annDir <- "/home/affy/annotation"
+# directory to store ROOT scheme files
+scmDir <- "/home/affy/schemes"
+
+annotationVersion<-"32"
+libraryVersion<-"4" # 4th version is for treating HuGene 1.0 as exon arrays
+
+if( !file.exists(paste(scmDir,"/Scheme_HuGene10stv1r",libraryVersion,"_na",annotationVersion,".root",sep=""))){
+	scheme.hugene10stv1 <- import.exon.scheme(paste("Scheme_HuGene10stv1r",libraryVersion,"_na",annotationVersion,sep=""),filedir=scmDir,
+	layoutfile=paste(annDir,"/HuGene-1_0-st-v1.r",libraryVersion,".clf",sep=""),
+	schemefile=paste(annDir,"/HuGene-1_0-st-v1.r",libraryVersion,".pgf",sep=""),
+	probeset=paste(annDir,"/HuGene-1_0-st-v1.na",annotationVersion,".hg19.probeset.csv",sep=""),
+	transcript=paste(annDir,"/HuGene-1_0-st-v1.na",annotationVersion,".hg19.transcript.csv",sep="")
+	)
+}else{
+	scheme.hugene10stv1<-root.scheme(paste(scmDir,"/Scheme_HuGene10stv1r",libraryVersion,"_na",annotationVersion,".root",sep=""))
+}
+
+project<-read.delim("cellist.txt",stringsAsFactor=FALSE,comment.char="#")
+##Tab-delimeted file with header: fileName name factor1 factor2 ...
+if(!all(!grepl(unlist(project[-1]),pattern="_",fixed=TRUE))){
+	cat("Warning: Replacing \"_\" in factors or names to \".\".\n")
+	project[-1]<-as.data.frame(lapply(X=project[-1] ,FUN=function(x)gsub(x=x,pattern="_",replacement=".",fixed=T)))
+	#quit(save="no",status=1)
+}
+
+
+colnames(project)[1:2]<-c("fileName","mix")
+project$fileName<-as.character(project$fileName)
+project$newNames<- apply(X=project[,-1], MARGIN=1, FUN=function(x)paste(as.character(x),collapse="_"))
+
+if(! all(fileEx<-file.exists(project$fileName))){
+	cat("Error: Files\n",paste(project$fileName[!fileEx],collapse="\n"),"\ndon't exist!\n")
+	quit(save="no",status=1)
+}
+rm(fileEx)
+
+raw.cel <- import.data(scheme.hugene10stv1,".",celdir=".",celfiles=project$fileName,filename="CEL",celnames=project$newNames)
+inten <-attachInten(raw.cel)
+inten <- intensity(inten)
+inten$Probe.ID <- inten$Y * 1050 + inten$X + 1
+probes<-read.table("probes_unique.tab",sep="\t")
+row.names(probes)<- probes$Probe.ID
+
+inten <- subset(inten, Probe.ID %in% probes$Probe.ID)[,-c(1:2)]
+inten$Transcript.Cluster.ID <- probes$Transcript.Cluster.ID[order(probes$Probe.ID)]
+inten <- inten[order(inten$Transcript.Cluster.ID, inten$Probe.ID),]
+write.table(inten, file="raw_inten_unique.tab", sep="\t", row.names=F)
