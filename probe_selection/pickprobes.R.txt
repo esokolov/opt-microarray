@@ -24,3 +24,6 @@ probes 					<- probes[-which(probes$Probe.ID %in% subset(probes, category=="cont
 probes					<- probes[,c(1,2,10)]
 tmp					<- table(as.factor(probes$Probe.ID))
 probes_unique 				<- subset(probes, ! Probe.ID %in% as.numeric(unlist(dimnames(tmp[tmp>1]))))
+
+tmp<-table(as.factor(probes_unique$Transcript.Cluster.ID))
+probes_worthy<-subset(probes_unique, Transcript.Cluster.ID %in% as.numeric(unlist(dimnames(tmp[tmp>3]))))
