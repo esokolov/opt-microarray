@@ -27,3 +27,4 @@ probes_unique 				<- subset(probes, ! Probe.ID %in% as.numeric(unlist(dimnames(t
 
 tmp<-table(as.factor(probes_unique$Transcript.Cluster.ID))
 probes_worthy<-subset(probes_unique, Transcript.Cluster.ID %in% as.numeric(unlist(dimnames(tmp[tmp>3]))))
+write.table(probes_worthy[,1:2], file="../opt-microarray/probe_selection/probes_worthy.tab", row.names=F, sep="\t")
