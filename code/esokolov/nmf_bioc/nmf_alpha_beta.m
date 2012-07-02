@@ -1,4 +1,4 @@
-function [A C] = nmf_alpha_beta(I, G, alpha, beta, maxIterCnt, eps)
+function [A C isConverged] = nmf_alpha_beta(I, G, alpha, beta, maxIterCnt, eps)
     [A C] = nmf_init_als(I, G, eps);
     
     prevQuality = -1;
@@ -34,6 +34,8 @@ function [A C] = nmf_alpha_beta(I, G, alpha, beta, maxIterCnt, eps)
         end
         prevQuality = currQuality;
     end
+    
+    isConverged = (currIter < maxIterCnt);
     
     A(isnan(A)) = 0;
     C(isnan(C)) = 0;

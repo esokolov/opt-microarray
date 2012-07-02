@@ -1,4 +1,4 @@
-function C = nmf_alpha_beta_fixedA(I, A, alpha, beta, maxIterCnt, eps)
+function [C isConverged] = nmf_alpha_beta_fixedA(I, A, alpha, beta, maxIterCnt, eps)
     C = nmf_init_als_fixedA(I, A, eps);
     
     prevQuality = -1;
@@ -22,6 +22,8 @@ function C = nmf_alpha_beta_fixedA(I, A, alpha, beta, maxIterCnt, eps)
         end
         prevQuality = currQuality;
     end
+    
+    isConverged = (currIter < maxIterCnt);
     
     A(isnan(A)) = 0;
     C(isnan(C)) = 0;
