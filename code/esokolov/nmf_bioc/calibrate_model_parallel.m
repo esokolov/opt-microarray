@@ -12,6 +12,9 @@ function [A, C, Avect, A_sliced] = calibrate_model_parallel(I, I_sliced, I_genes
         aff = aff / norm;
         conc = conc * norm;
         
+        aff(isnan(aff)) = 0;
+        aff(isinf(aff)) = 1e10;
+        
         A_sliced{i} = aff;
         C(i, :) = conc;
         

@@ -15,8 +15,10 @@ function [quality_arrays_mad, quality_arrays_ouliers, quality_probes_mad, qualit
         sample2_sliced{i} = sample2_sliced{i}(:, setdiff(1:sampleSize, partition_arrays));
     end
 
+    fprintf(' 1');
     [A1_arrays, C1_arrays, Avect1_arrays, A1_slices_arrays] = ...
         calibrate_model_parallel(sample1, sample1_sliced, inten_genes_idx, factorization_func);
+    fprintf(' 2');
     [A2_arrays, C2_arrays, Avect2_arrays, A2_slices_arrays] = ...
         calibrate_model_parallel(sample2, sample2_sliced, inten_genes_idx, factorization_func);
 
@@ -61,8 +63,10 @@ function [quality_arrays_mad, quality_arrays_ouliers, quality_probes_mad, qualit
         end
     end
 
+    fprintf(' 3');
     [A1_probes, C1_probes, Avect1_probes, A1_slices_probes] = ...
         calibrate_model_parallel(sample1, sample1_sliced, sample1_genes_idx, factorization_func);
+    fprintf(' 4');
     [A2_probes, C2_probes, Avect2_probes, A2_slices_probes] = ...
         calibrate_model_parallel(sample2, sample2_sliced, sample2_genes_idx, factorization_func);
 
