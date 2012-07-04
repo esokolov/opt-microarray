@@ -1,30 +1,31 @@
-function res = nmf_alpha_beta_divergence(I, AC, alpha, beta)
-    eps = 1e-6;
+function res = nmf_alpha_beta_divergence_robust(I, AC, alpha, beta)
+    %eps = 1e-11;
     if (alpha == 0 && beta == 0)
-        res = 0.5 * bsxfun(@power, log(I + eps) - log(AC + eps), 2);
-        res = sum(sum(res));
+        res = 0.5 * bsxfun(@power, log(I) - log(AC), 2);
     elseif (alpha == 0)
         res = (1 / beta^2) * (bsxfun(@times, bsxfun(@power, AC + eps, beta), ...
             log(bsxfun(@rdivide, bsxfun(@power, AC + eps, beta) + eps, bsxfun(@power, I + eps, beta) + eps))) - ...
             bsxfun(@power, AC + eps, beta) +...
             bsxfun(@power, I + eps, beta));
-        res = sum(sum(res));
     elseif (beta == 0)
         res = (1 / alpha^2) * (bsxfun(@times, bsxfun(@power, I + eps, alpha), ...
             log(bsxfun(@rdivide, bsxfun(@power, I + eps, alpha) + eps, bsxfun(@power, AC + eps, alpha) + eps))) - ...
             bsxfun(@power, I + eps, alpha) +...
             bsxfun(@power, AC + eps, alpha));
-        res = sum(sum(res));
     elseif (alpha == -beta)
         res = (1 / alpha^2) * ...
             (log(bsxfun(@rdivide, bsxfun(@power, AC + eps, alpha) + eps, bsxfun(@power, I + eps, alpha) + eps)) + ...
             bsxfun(@power, bsxfun(@rdivide, bsxfun(@power, AC + eps, alpha) + eps, bsxfun(@power, I + eps, alpha) + eps) + eps, -1) - 1);
-        res = sum(sum(res));
     else
         res = - (1 / (alpha * beta)) * ...
             (bsxfun(@times, bsxfun(@power, I + eps, alpha), bsxfun(@power, AC + eps, beta)) - ...
             (alpha / (alpha + beta)) * bsxfun(@power, I + eps, alpha + beta) - ...
             (beta / (alpha + beta)) * bsxfun(@power, AC + eps, alpha + beta));
-        res = sum(sum(res));
     end
+    
+    for i = 1:size(I, 2)
+        res(:, i) = sort(res(:, i));
+    end
+    k = fix(size(res, 1) * 0.99);
+    res = sum(sum(res(1:k, :)));
 end

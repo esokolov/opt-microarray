@@ -1,4 +1,4 @@
-function [A, C, Avect, A_sliced, notConvergedCnt] = calibrate_model_parallel(I, I_sliced, I_genes_idx, factorization_func)
+function [A, C, Avect, A_sliced, notConvergedCnt, normProblemsCnt] = calibrate_model_parallel(I, I_sliced, I_genes_idx, factorization_func)
     sampleSize = size(I, 2) - 2;
     G = length(I_sliced);
 
@@ -6,15 +6,20 @@ function [A, C, Avect, A_sliced, notConvergedCnt] = calibrate_model_parallel(I, 
     A_sliced = cell(G, 1);
     
     notConvergedCnt = 0;
+    normProblemsCnt = 0;
     
     parfor i = 1:G
         [aff, conc, isConverged] = factorization_func(I_sliced{i});
         
         notConvergedCnt = notConvergedCnt + ~isConverged;
         
-        norm = prod(aff) ^ (1 / length(aff));
-        aff = aff / norm;
-        conc = conc * norm;
+        %norm = prod(aff) ^ (1 / length(aff));
+        %norm = mean(aff);
+        %aff = aff / norm;
+        %conc = conc * norm;
+        [aff, conc, isProblem] = nmf_normalize_prod(aff, conc);
+        
+        normProblemsCnt = normProblemsCnt + isProblem;
         
         aff(isnan(aff)) = 0;
         aff(isinf(aff)) = 1e10;
