@@ -24,7 +24,7 @@ root.data(scheme.hugene10stv1, rootfile = "/home/sokolov/tmp/sample1000_cel.root
 
 files <- list.files("/mnt/teradisk/affy/HuGene10_ST_CELS/sample/", "*.CEL", ignore.case = F)
 sampleCels1 <- import.data(xps.scheme = scheme.hugene10stv1, filedir = "/mnt/teradisk/affy/HuGene10_ST_CELS/sample",
-							filename = "sample1000_part1", celdir = "/mnt/teradisk/affy/HuGene10_ST_CELS/sample", celfiles = files[1:500])
+							filename = "sample1000_part1", celdir = "/mnt/teradisk/affy/HuGene10_ST_CELS/sample", celfiles = files)
 sampleCels2 <- import.data(xps.scheme = scheme.hugene10stv1, filedir = "/mnt/teradisk/affy/HuGene10_ST_CELS/sample",
 							filename = "sample1000_part2", celdir = "/mnt/teradisk/affy/HuGene10_ST_CELS/sample", celfiles = files[501:1000])
 							
@@ -35,4 +35,9 @@ sampleExpr2 <- xps::rma(xps.data = sampleCels1, filename = "sample1000_part2_exp
 
 sampleExpr1 <- attachExpr(sampleExpr1)
 sampleExpr2 <- attachExpr(sampleExpr2)
+
+
+expr <- express(cels, filedir = "/mnt/teradisk/affy/HuGene10_ST_CELS/sample", filename = "sample1000_part11", 
+	bgcorrect.method = NULL, normalize.method = NULL, summarize.method = "medianpolish", summarize.logbase = "log", summarize.select = "pmonly",
+	summarize.option = "transcript", summarize.params=c(10, 0.01, 1.0), exonlevel = "core+metacore", xps.scheme = scheme.hugene10stv1)
 

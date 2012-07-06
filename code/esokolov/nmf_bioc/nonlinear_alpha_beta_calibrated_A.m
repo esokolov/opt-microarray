@@ -1,16 +1,12 @@
 %function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, eps)
-function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, eps)
+function [C isConverged] = nonlinear_alpha_beta_calibrated_A(I, A_calibrated, alpha, beta, maxIterCnt, eps)
     %[A B C] = nonlinear_init_als(I, eps);
-    
-    [A C] = nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, eps);
-    
+    %[A C] = nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, eps);
     %[A C] = nmf_normalize_prod(A, C);
+    C = nmf_alpha_beta_fixedA(I, A_calibrated, alpha, beta, maxIterCnt, eps);
     
-    %A = rand(size(I, 1), 1);
-    %C = rand(1, size(I, 2));
-    %B = rand(size(I, 1), 1);
-    
-    B = zeros(size(A)) + eps;
+    A = A_calibrated;
+    B = zeros(size(A));
     
     prevQuality = -1;
     for currIter = 1:maxIterCnt
@@ -25,19 +21,7 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         %C = projected_grad(C, maxIterCnt, 1e-15, ...
         %    @(C_arg) nmf_alpha_beta_divergence(I, langmuir_func(A, B, C_arg), alpha, beta), ...
         %    @(C_arg) nonlinear_alpha_beta_grad_C_special(I, A, B, C_arg));
-        
-        %C = sum(1 ./ (1 + B * C), 1) ./ sum(bsxfun(@rdivide, A, I .* ((1 + B * C) .^ 2)), 1);
-        
-        for i = 1:length(C)
-            %f = @(c) (-sum(1 ./ (c .* (1 + B * c))) + sum(A ./ (I(:, i) .* (1 + B * C(i)))));
-            %C(i) = max(0, fsolve(f, C(i), optimset('Display', 'off')));
-            f_cost = @(c) (sum((A .* C(i)) ./ (I(:, i) .* ((1 + B * C(i)) .^ 2))) - sum(log((A .* c) ./ (1 + B * c))));
-            f_grad = @(c) (-sum(1 ./ (c .* (1 + B * c))) + sum(A ./ (I(:, i) .* (1 + B * C(i)))));
-            f = @(c) fff(c, f_cost, f_grad);
-            C(i) = fmincon(f, C(i), [], [], [], [], 0, [], [], ...
-                optimset('Algorithm', 'sqp', 'GradObj', 'on', 'Display', 'off'));
-            %C(i) = C_new + 0.5 * (C_new - C(i));
-        end
+        C = sum(1 ./ (1 + B * C), 1) ./ sum(bsxfun(@rdivide, A, I .* ((1 + B * C) .^ 2)), 1);
         
         %F = (A * C) ./ (1 + B * C);
         %D = bsxfun(@rdivide, A, (1 + B * C) .^ 2);
@@ -45,27 +29,9 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         %    sum(eps + D .* ((F + eps) .^ (alpha + beta - 1)), 1)) .^ (1 / alpha);
         
         % optimizing B
-         for i = 1:length(B)
-            %f = @(b) (sum((A(i) * (C .^ 2)) ./ (I(i, :) .* ((1 + b * C) .^ 2))) - sum(C ./ (1 + B(i) * C)));
-            %B(i) = max(0, fzero(f, B(i), optimset('Display', 'off')));
-            %f_cost = @(b) (sum((C * b) ./ (1 + B(i) * C)) + sum((A(i) * C) ./ (I(i, :) .* (1 + b * C))));
-            %f_grad = @(b) (-sum((A(i) * (C .^ 2)) ./ (I(i, :) .* ((1 + b * C) .^ 2))) + sum(C ./ (1 + B(i) * C)));
-            
-            f_cost = @(b) (sum((C * b) ./ (1 + B(i) * C)) + sum((A(i) * C) ./ (I(i, :) .* (1 + b * C))));
-            f_grad = @(b) (-sum((A(i) * (C .^ 2)) ./ (I(i, :) .* ((1 + b * C) .^ 2))) + sum(C ./ (1 + B(i) * C)));
-            f = @(b) fff(b, f_cost, f_grad);
-            B(i) = fmincon(f, B(i), [], [], [], [], 0, [], [], ...
-                optimset('Algorithm', 'sqp', 'GradObj', 'on', 'Display', 'off'));
-            %B(i) = B_new + 0.5 * (B_new - B(i));
-            
-        end
-        
-        %B = B .* (sum((A * (C .^ 2)) ./ (I .* ((1 + B * C) .^ 2)), 2) ./ ...
-        %    sum(bsxfun(@rdivide, C, 1 + B * C), 2));
-        
-        %B = projected_grad(B, maxIterCnt, 1e-15, ...
-        %    @(B_arg) nmf_alpha_beta_divergence(I, langmuir_func(A, B_arg, C), alpha, beta), ...
-        %    @(B_arg) nonlinear_alpha_beta_grad_B_special(I, A, B_arg, C));
+        B = projected_grad(B, maxIterCnt, 1e-15, ...
+            @(B_arg) nmf_alpha_beta_divergence(I, langmuir_func(A, B_arg, C), alpha, beta), ...
+            @(B_arg) nonlinear_alpha_beta_grad_B_special(I, A, B_arg, C));
         
 %         B = projected_grad(B, maxIterCnt, 1e-15, ...
 %             @(B_arg) nmf_alpha_beta_divergence(I, langmuir_func(A, B_arg, C), alpha, beta), ...
@@ -78,24 +44,17 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         Q = langmuir_func(A, B, C);
         currQuality = nmf_alpha_beta_divergence(I, Q, alpha, beta);
         if (nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
-            %break;
+            break;
         end
         prevQuality = currQuality;
-        %if (currIter > 10000)
-        %    break;
-        %end
-        fprintf('%d: %f\n', currIter, currQuality);
+        
+        %fprintf('%d: %f\n', currIter, currQuality);
     end
     
     isConverged = (currIter < maxIterCnt);
     
     A(isnan(A)) = 0;
     C(isnan(C)) = 0;
-end
-
-function [a1 a2] = fff(c, f_cost, f_grad)
-    a1 = f_cost(c);
-    a2 = f_grad(c);
 end
 
 function X_new = projected_grad(X, maxIterCnt, eps, cost_func, grad_func)
