@@ -3,7 +3,7 @@ function A = nmf_smart_fixedC(I, C, maxIterCnt, eps)
     
     prevQuality = -1;
     for currIter = 1:maxIterCnt
-        LearningRate_A = repmat(0.1 ./ sum(C, 2)', [size(A, 1) 1]);
+        LearningRate_A = repmat(1 ./ sum(C, 2)', [size(A, 1) 1]);
         
         T = log(bsxfun(@rdivide, I + eps, A * C + eps)) * C';
         T = exp(bsxfun(@times, LearningRate_A, T));

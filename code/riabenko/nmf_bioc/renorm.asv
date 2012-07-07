@@ -7,8 +7,6 @@ function [A_new C_new isbreak] = renorm(I, A, C, maxIterCnt, eps)
 A_new = A;
 C_new = C;
 isbreak = false;
-%figure
-%hold on
 for currIter = 1:maxIterCnt
     for i=1:length(A)
         A_loo = A_new(setdiff(1:end,i)) / sum(abs(A_new(setdiff(1:end,i))));
@@ -18,7 +16,7 @@ for currIter = 1:maxIterCnt
     end
     C_prev = C_new;
     C_new = nmf_smart_fixedA(I, A_new,100,10^-6);
-%    plot(currIter, sum((C_prev-C_new).^2), 'Marker','.')
+    plot(currIter, 
     if sum((C_prev-C_new).^2)<eps
         isbreak = true;
         break;
