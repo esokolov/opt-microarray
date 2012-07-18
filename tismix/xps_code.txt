@@ -44,10 +44,10 @@ raw.cel <- import.data(scheme.hugene10stv1,".",celdir=".",celfiles=project$fileN
 inten <-attachInten(raw.cel)
 inten <- intensity(inten)
 inten$Probe.ID <- inten$Y * 1050 + inten$X + 1
-probes<-read.table("probes_unique.tab",sep="\t")
+probes<-read.table("probes_worthy.tab",sep="\t", header = T)
 row.names(probes)<- probes$Probe.ID
 
 inten <- subset(inten, Probe.ID %in% probes$Probe.ID)[,-c(1:2)]
 inten$Transcript.Cluster.ID <- probes$Transcript.Cluster.ID[order(probes$Probe.ID)]
 inten <- inten[order(inten$Transcript.Cluster.ID, inten$Probe.ID),]
-write.table(inten, file="raw_inten_unique.tab", sep="\t", row.names=F)
+write.table(inten, file="raw_inten_unique.tab", sep="\t", row.names=F, col.names = F)
