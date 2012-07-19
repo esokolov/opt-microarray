@@ -7,13 +7,13 @@
 %   trust-region-reflective
 %   active-set
 %   interior-point
-function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, eps, opt_method_C, opt_method_B, use_term_criteria)
-    if (nargin < 6)
+function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, eps, alpha_C, alpha_B, opt_method_C, opt_method_B, use_term_criteria)
+    if (nargin < 8)
         opt_method_C = 'mult';
         opt_method_B = 'mult';
-    elseif (nargin < 7)
+    elseif (nargin < 9)
         opt_method_B = 'mult';
-    elseif (nargin < 8)
+    elseif (nargin < 10)
         use_term_criteria = true;
     end
         
@@ -37,6 +37,28 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         %D = bsxfun(@rdivide, C, 1 + B * C);
         %A = A .* (sum((D .* ((I + eps) .^ alpha) .* ((F + eps) .^ (beta - 1))), 2) ./ ...
         %    sum(eps + ((F + eps) .^ (alpha + beta - 1)) .* D, 2)) .^ (1 / alpha);
+        
+%         % <plots>
+%         if (mod(currIter, 50) == 0)
+%             array_idx = 525;
+%             f_c_plot = @(c) sum(A * c ./ (I(:, array_idx) .* (1 + B * c)) - log(A * c ./ (1 + B * c)));
+%             f_c_approx = @(c, c0) sum(A * c0 ./ (I(:, array_idx) .* (1 + B * c0)) + (A ./ (I(:, array_idx) .* (1 + B * c0) .^ 2)) * (c - c0) - ...
+%                 (A .* B ./ (I(:, array_idx) .* (1 + B * c0) .^ 3)) * ((c - c0) .^ 2) - ...
+%                 log(A * c0 ./ (1 + B * c0)) - (1 ./ (c0 + B * (c0^2))) * (c - c0) + ...
+%                 ((B * c0 + 0.5) ./ (c0^2 * (1 + B * c0) .^ 2)) * ((c - c0) .^ 2));
+%             x = 1:100:1e7;
+%             y = x;
+%             y1 = x;
+%             for j = 1:length(x)
+%                 y(j) = f_c_plot(x(j));
+%                 y1(j) = f_c_approx(x(j), C(array_idx));
+%             end
+%             figure;
+%             plot(x, y, 'r');
+%             hold on;
+%             plot(x, y1);
+%         end        
+%         % </plots>
          
         % optimizing C
         if strcmp(opt_method_C, 'projected_grad')
@@ -46,8 +68,8 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         elseif strcmp(opt_method_C, 'mult')
             C = sum(1 ./ (1 + B * C), 1) ./ sum(bsxfun(@rdivide, A, I .* ((1 + B * C) .^ 2)), 1);
         elseif strcmp(opt_method_C, 'quadratic')
-            C = C - 0.5 * sum(bsxfun(@rdivide, A, I .* ((1 + B * C) .^ 2)) - 1 ./ bsxfun(@plus, C, B * (C .^ 2)), 1) ./ ...
-                sum((B * C + 0.5) ./ (bsxfun(@times, C, 1 + B * C) .^ 2) - bsxfun(@rdivide, A .* B, I .* ((1 + B * C) .^ 3)), 1);
+                C = C - 0.5 * (sum(bsxfun(@rdivide, A, I .* ((1 + B * C) .^ 2)) - 1 ./ bsxfun(@plus, C, B * (C .^ 2)), 1) + alpha_C * C) ./ ...
+                (sum((B * C + 0.5) ./ (bsxfun(@times, C, 1 + B * C) .^ 2) - bsxfun(@rdivide, A .* B, I .* ((1 + B * C) .^ 3)), 1) + alpha_C/2);
             C = max(C, 0);
         elseif strcmp(opt_method_C, 'equation_solver')
             for i = 1:length(C)
@@ -80,8 +102,8 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
                 sum(bsxfun(@rdivide, C, 1 + B * C), 2));
         elseif strcmp(opt_method_B, 'quadratic')
             rpk = A * C ./ I;
-            B = B - 0.5 * sum(bsxfun(@rdivide, C, 1 + B * C) - bsxfun(@times, rpk, C) ./ ((1 + B * C) .^ 2), 2) ./ ...
-                sum(bsxfun(@times, rpk, C .^ 2) ./ ((1 + B * C) .^ 3) - 0.5 * bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2), 2);
+            B = B - 0.5 * (sum(bsxfun(@rdivide, C, 1 + B * C) - bsxfun(@times, rpk, C) ./ ((1 + B * C) .^ 2), 2) + alpha_B * B) ./ ...
+                (sum(bsxfun(@times, rpk, C .^ 2) ./ ((1 + B * C) .^ 3) - 0.5 * bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2), 2) + alpha_B/2);
             B = max(B, 0);
         elseif strcmp(opt_method_C, 'equation_solver')
             for i = 1:length(B)
@@ -116,6 +138,14 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         
         Q = langmuir_func(A, B, C);
         currQuality = nmf_alpha_beta_divergence(I, Q, alpha, beta);
+        
+        %if (currQuality > prevQuality && sum(C == 0) > 0)
+        %    fprintf('%d\n', find(C == 0));
+        %    I = I(:, setdiff(1:size(I, 2), find(C == 0)));
+        %    [A B C] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, eps, opt_method_C, opt_method_B, use_term_criteria);
+        %    break;
+        %end
+        
         if (use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
             break;
         end
@@ -124,6 +154,8 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         %    break;
         %end
         fprintf('%d: %f\n', currIter, currQuality);
+        %fprintf('%d: %e\n', currIter, C(525));
+        
     end
     
     isConverged = (currIter < maxIterCnt);

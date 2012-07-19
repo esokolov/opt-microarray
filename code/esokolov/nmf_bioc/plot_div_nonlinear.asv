@@ -22,12 +22,12 @@ figure; plot(x, y)
 %% C quad approx
 array_idx = 525;
 f_c_plot = @(c) sum(A * c ./ (I(:, array_idx) .* (1 + B * c)) - log(A * c ./ (1 + B * c)));
-f_c_reg_plot = @(c) sum(A * c ./ (I(:, array_idx) .* (1 + B * c)) - log(A * c ./ (1 + B * c))) + 1e-9 * c ^ 2;
+f_c_reg_plot = @(c) sum(A * c ./ (I(:, array_idx) .* (1 + B * c)) - log(A * c ./ (1 + B * c))) + alpha_C * c ^ 2;
 f_c_approx = @(c, c0) sum(A * c0 ./ (I(:, array_idx) .* (1 + B * c0)) + (A ./ (I(:, array_idx) .* (1 + B * c0) .^ 2)) * (c - c0) - ...
     (A .* B ./ (I(:, array_idx) .* (1 + B * c0) .^ 3)) * ((c - c0) .^ 2) - ...
     log(A * c0 ./ (1 + B * c0)) - (1 ./ (c0 + B * (c0^2))) * (c - c0) + ...
     ((B * c0 + 0.5) ./ (c0^2 * (1 + B * c0) .^ 2)) * ((c - c0) .^ 2));
-x = 1:100:500000;
+x = 1:1:1000;
 y = x;
 y1 = x;
 y_reg = x;
@@ -41,7 +41,7 @@ plot(x, y, 'r', 'LineWidth', 2);
 hold on;
 plot(x, y_reg, 'b', 'LineWidth', 2);
 %plot(x, y1, 'LineWidth', 2);
-plot([C(array_idx) C(array_idx)], [min(min(y)) max(max(y))], '--', 'LineWidth', 2);
+%plot([C(array_idx) C(array_idx)], [min(min(y)) max(max(y))], '--', 'LineWidth', 2);
 grid on;
 %legend('Functional', 'Quadratic approximation');
 
