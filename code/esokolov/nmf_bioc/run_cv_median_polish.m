@@ -1,14 +1,14 @@
 
-inten = inten_full(:, [1:100 1001:1002]);
+inten = inten_full(:, [1:500 1001:1002]);
 inten_sliced = inten_full_sliced;
 for i = 1:length(inten_sliced)
-    inten_sliced{i} = inten_sliced{i}(:, 1:100);
+    inten_sliced{i} = inten_sliced{i}(:, 1:500);
 end
 
-inten_test = inten_full(:, 901:end);
+inten_test = inten_full(:, 501:end);
 inten_test_sliced = inten_full_sliced;
 for i = 1:length(inten_test_sliced)
-    inten_test_sliced{i} = inten_test_sliced{i}(:, 901:end);
+    inten_test_sliced{i} = inten_test_sliced{i}(:, 501:end);
 end
 
 %fprintf('Generating partitions...');
@@ -32,7 +32,7 @@ for k = 1:length(conc_gene_dist)
 end
 concentration_dists_mp = mad(conc_gene_dist);
 
-goodness_of_fit_mp = norm(inten(:, partition_arrays) - arrays_factors_smart{1} * arrays_factors_smart{2}, 'fro');
+%goodness_of_fit_mp = norm(inten(:, partition_arrays) - arrays_factors_smart{1} * arrays_factors_smart{2}, 'fro');
 
 % fprintf('Factorizing I...');
 % [A, C, Avect, A_sliced, converged_cnt_full_mp] = calibrate_model_parallel(inten, inten_sliced, ...
@@ -49,10 +49,10 @@ goodness_of_fit_mp = norm(inten(:, partition_arrays) - arrays_factors_smart{1} *
 % overfitting_fro_mp = norm(inten_test(:, 1:end-2) - A * C_test, 'fro') - ...
 %     norm(inten(:, 1:end-2) - A * C, 'fro');
 
-fprintf('Mad(A1 - A2): %f\nMad(C1 - C2): %e\nMad(dist(C1, C2)): %e\nGoodness of fit: %e\n\n', ...
-    quality_arrays_mad_mp, quality_probes_mad_mp, concentration_dists_mp, goodness_of_fit_mp);
+fprintf('Mad(A1 - A2): %f\nMad(C1 - C2): %e\nMad(dist(C1, C2)): %e\n\n', ...
+    quality_arrays_mad_mp, quality_probes_mad_mp, concentration_dists_mp);
 
-save('alpha_beta_cv_median_polish_supernew', 'goodness_of_fit_mp', 'quality_arrays_mad_mp', ...
+save('alpha_beta_cv_second_median_polish', 'quality_arrays_mad_mp', ...
     'concentration_dists_mp', ...
     'quality_arrays_ouliers_mp', 'quality_probes_mad_mp', 'quality_probes_ouliers_mp', ...
     'converged_cnt_arrays1_mp', 'converged_cnt_arrays2_mp', 'converged_cnt_probes1_mp', 'converged_cnt_probes2_mp');%, ...
