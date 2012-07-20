@@ -21,13 +21,17 @@ figure; plot(x, y)
 
 %% C quad approx
 array_idx = 525;
+%array_idx = 57;
+%array_idx = 80;
+%array_idx = 700;
+%array_idx = 584;
 f_c_plot = @(c) sum(A * c ./ (I(:, array_idx) .* (1 + B * c)) - log(A * c ./ (1 + B * c)));
 f_c_reg_plot = @(c) sum(A * c ./ (I(:, array_idx) .* (1 + B * c)) - log(A * c ./ (1 + B * c))) + 1e-9 * c ^ 2;
 f_c_approx = @(c, c0) sum(A * c0 ./ (I(:, array_idx) .* (1 + B * c0)) + (A ./ (I(:, array_idx) .* (1 + B * c0) .^ 2)) * (c - c0) - ...
     (A .* B ./ (I(:, array_idx) .* (1 + B * c0) .^ 3)) * ((c - c0) .^ 2) - ...
     log(A * c0 ./ (1 + B * c0)) - (1 ./ (c0 + B * (c0^2))) * (c - c0) + ...
     ((B * c0 + 0.5) ./ (c0^2 * (1 + B * c0) .^ 2)) * ((c - c0) .^ 2));
-x = 1:100:500000;
+x = 1:1:5000;
 y = x;
 y1 = x;
 y_reg = x;

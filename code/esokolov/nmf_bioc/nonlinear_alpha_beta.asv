@@ -1,19 +1,5 @@
-% opt_method:
-%   mult
-%   quadratic
-%   projected_grad
-%   equation_solver
-%   sqp
-%   trust-region-reflective
-%   active-set
-%   interior-point
-function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, eps, alpha_C, alpha_B, opt_method_C, opt_method_B, use_term_criteria)
+function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, eps, alpha_C, alpha_B, use_term_criteria)
     if (nargin < 8)
-        opt_method_C = 'mult';
-        opt_method_B = 'mult';
-    elseif (nargin < 9)
-        opt_method_B = 'mult';
-    elseif (nargin < 10)
         use_term_criteria = true;
     end
         
@@ -31,85 +17,88 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
     
     prevQuality = -1;
     for currIter = 1:maxIterCnt
-        % optimizing A
-        A = size(I, 2) ./ sum(bsxfun(@rdivide, C, I .* (1 + B * C)), 2);
-        %F = (A * C) ./ (1 + B * C);
-        %D = bsxfun(@rdivide, C, 1 + B * C);
-        %A = A .* (sum((D .* ((I + eps) .^ alpha) .* ((F + eps) .^ (beta - 1))), 2) ./ ...
-        %    sum(eps + ((F + eps) .^ (alpha + beta - 1)) .* D, 2)) .^ (1 / alpha);
-         
-        % optimizing C
-        if strcmp(opt_method_C, 'projected_grad')
-            C = projected_grad(C, maxIterCnt, 1e-15, ...
-                @(C_arg) nmf_alpha_beta_divergence(I, langmuir_func(A, B, C_arg), alpha, beta), ...
-                @(C_arg) nonlinear_alpha_beta_grad_C_special(I, A, B, C_arg));
-        elseif strcmp(opt_method_C, 'mult')
-            C = sum(1 ./ (1 + B * C), 1) ./ sum(bsxfun(@rdivide, A, I .* ((1 + B * C) .^ 2)), 1);
-        elseif strcmp(opt_method_C, 'quadratic')
-                C = C - 0.5 * (sum(bsxfun(@rdivide, A, I .* ((1 + B * C) .^ 2)) - 1 ./ bsxfun(@plus, C, B * (C .^ 2)), 1) + alpha_C * C) ./ ...
-                (sum((B * C + 0.5) ./ (bsxfun(@times, C, 1 + B * C) .^ 2) - bsxfun(@rdivide, A .* B, I .* ((1 + B * C) .^ 3)), 1) + alpha_C/2);
+        if (alpha == 0 && beta == 0)
+            %F = (A * C) ./ (1 + B * C);
+            A = exp((1 / size(I, 2)) * sum(log(I + eps) - log(bsxfun(@rdivide, C, 1 + B * C) + eps), 2));
+            A = max(A, 0);
+            
+            F = (A * C) ./ (1 + B * C);
+            C = C + 0.5 * (sum((1 ./ (eps + bsxfun(@plus, C, B * (C .^ 2)))) .* (log(I + eps) - log(F + eps)), 1) + alpha_C * C) ./ ...
+                (sum((1 ./ (eps + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((2 * B * C + 1) .* log((I + eps) ./ (F + eps)) + 1), 1) + alpha_C/2);            
             C = max(C, 0);
-        elseif strcmp(opt_method_C, 'equation_solver')
-            for i = 1:length(C)
-                f = @(c) (-sum(1 ./ (c .* (1 + B * c))) + sum(A ./ (I(:, i) .* (1 + B * C(i)))));
-                C(i) = max(0, fsolve(f, C(i), optimset('Display', 'off')));
-            end
-        else        
-            for i = 1:length(C)
-                f_cost = @(c) (sum((A .* C(i)) ./ (I(:, i) .* ((1 + B * C(i)) .^ 2))) - sum(log((A .* c) ./ (1 + B * c))));
-                f_grad = @(c) (-sum(1 ./ (c .* (1 + B * c))) + sum(A ./ (I(:, i) .* (1 + B * C(i)))));
-                f = @(c) fff(c, f_cost, f_grad);
-                C(i) = fmincon(f, C(i), [], [], [], [], 0, [], [], ...
-                    optimset('Algorithm', opt_method_C, 'GradObj', 'on', 'Display', 'off'));
-                %C(i) = C_new + 0.5 * (C_new - C(i));
-            end
-        end
-        
-%         F = (A * C) ./ (1 + B * C);
-%         D = bsxfun(@rdivide, A, (1 + B * C) .^ 2);
-%         C = C .* (sum(D .* ((I + eps) .^ alpha) .* ((F + eps) .^ (beta - 1)), 1) ./ ...
-%             sum(eps + D .* ((F + eps) .^ (alpha + beta - 1)), 1)) .^ (1 / alpha);
-        
-        % optimizing B
-        if strcmp(opt_method_B, 'projected_grad')
-            B = projected_grad(B, maxIterCnt, 1e-15, ...
-                @(B_arg) nmf_alpha_beta_divergence(I, langmuir_func(A, B_arg, C), alpha, beta), ...
-                @(B_arg) nonlinear_alpha_beta_grad_B_special(I, A, B_arg, C));
-        elseif strcmp(opt_method_B, 'mult')
-            B = B .* (sum((A * (C .^ 2)) ./ (I .* ((1 + B * C) .^ 2)), 2) ./ ...
-                sum(bsxfun(@rdivide, C, 1 + B * C), 2));
-        elseif strcmp(opt_method_B, 'quadratic')
-            rpk = A * C ./ I;
-            B = B - 0.5 * (sum(bsxfun(@rdivide, C, 1 + B * C) - bsxfun(@times, rpk, C) ./ ((1 + B * C) .^ 2), 2) + alpha_B * B) ./ ...
-                (sum(bsxfun(@times, rpk, C .^ 2) ./ ((1 + B * C) .^ 3) - 0.5 * bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2), 2) + alpha_B/2);
+            
+            F = (A * C) ./ (1 + B * C);
+            B = B - 0.5 * (sum(bsxfun(@rdivide, C, 1 + B * C) .* (log(I + eps) - log(F + eps)), 2) + alpha_B * B) ./ ...
+                (sum(bsxfun(@times, C .^ 2, (1 + B * C) .^ 2) .* (log(F + eps) - log(I + eps) + 1), 2) + alpha_B);
             B = max(B, 0);
-        elseif strcmp(opt_method_C, 'equation_solver')
-            for i = 1:length(B)
-                f = @(b) (sum((A(i) * (C .^ 2)) ./ (I(i, :) .* ((1 + b * C) .^ 2))) - sum(C ./ (1 + B(i) * C)));
-                B(i) = max(0, fzero(f, B(i), optimset('Display', 'off')));
-            end
+        elseif (alpha == 0)
+            F = (A * C) ./ (1 + B * C);
+            A = A - 0.5 * ((1 ./ (A + eps)) .* sum(((F + eps) .^ beta) .* log((F + eps) ./ (I + eps)), 2)) ./ ...
+                ((1 ./ (eps + A .^ 2)) .* sum(((F + eps) .^ beta) .* ((beta - 1) * log((F + eps) ./ (I + eps)) + 1), 2));
+            A = max(A, 0);
+            
+            F = (A * C) ./ (1 + B * C);
+            C = C - 0.5 * (sum(((F + eps) .^ (beta + 1)) .* log((F + eps) ./ (I + eps)) .* (1 ./ (eps + A * (C .^ 2))), 1) + alpha_C * C) ./ ...
+                (sum((1 ./ (eps + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((F + eps) .^ beta) .* ...
+                (1 - (2 * B * C - beta + 1) .* log((F + eps) ./ (I + eps))), 1) + alpha_C/2);
+            C = max(C, 0);
+            
+            F = (A * C) ./ (1 + B * C);
+            B = B + 0.5 * (alpha_B * B + (1 ./ (A + eps)) .* sum(((F + eps) .^ (beta + 1)) .* log((F + eps) ./ (I + eps)), 2)) ./ ...
+                (sum(bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2) .* ((F + eps) .^ beta) .* ...
+                ((beta + 1) * log((F + eps) ./ (I + eps)) + 1), 2) + alpha_B/2);
+            B = max(B, 0);
+        elseif (beta == 0)
+            A = (sum(I .^ alpha, 2) ./ sum(bsxfun(@rdivide, C, 1 + B * C) .^ alpha, 2)) .^ (1 / alpha);
+            A = max(A, 0);
+            
+            C = C - 0.5 * (sum(((((A * C) ./ (1 + B * C)) .^ alpha) - I .^ alpha) ./ ...
+                bsxfun(@times, C, 1 + B * C), 1) + alpha_C * C) ./ ...
+                (sum(((alpha - 1 - 2 * B * C) .* (((A * C) ./ (1 + B * C)) .^ alpha) + ...
+                (1 + 2 * B * C) .* (I .^ alpha)) ./ ...
+                bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C/2);
+            C = max(C, 0);
+            
+            B = B - 0.5 * (sum(bsxfun(@times, C, I .^ alpha - ((A * C) ./ (1 + B * C)) .^ alpha) ./ ...
+                (1 + B * C), 2) + a ./ ...
+                sum(bsxfun(@times, C .^ 2, (alpha + 1) * ((A * C) ./ (1 + B * C)) .^ alpha - I .^ alpha) ./ ...
+                ((1 + B * C) .^ 2), 2);
+            B = max(B, 0);
+        elseif (alpha == -beta)
+            A = ((1 / size(I, 2)) * sum(bsxfun(@rdivide, I .* (1 + B * C), C) .^ alpha, 2)) .^ (1 / alpha);
+            A = max(A, 0);
+            
+            C = C - 0.5 * sum((1 - ((I .* (1 + B * C)) ./ (A * C)) .^ alpha) ./ bsxfun(@times, C, 1 + B * C), 1) ./ ...
+                sum(((((I .* (1 + B * C)) ./ (A * C)) .^ alpha) .* (2 * B * C + alpha + 1) - 2 * B * C - 1) ./ ...
+                bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1);
+            C = max(C, 0);
+            
+            B = B - 0.5 * sum((bsxfun(@rdivide, I, A) .^ alpha) .* (bsxfun(@rdivide, 1 + B * C, C) .^ (alpha - 1)) - ...
+                bsxfun(@rdivide, C, 1 + B * C), 2) ./ ...
+                sum((alpha - 1) * ((bsxfun(@rdivide, I, A) .^ alpha) .* (bsxfun(@rdivide, 1 + B * C, C) .^ (alpha - 2))) + ...
+                bsxfun(@rdivide, C, 1 + B * C) .^ 2, 2);
+            B = max(B, 0);
         else
-            for i = 1:length(B)
-                f_cost = @(b) (sum((C * b) ./ (1 + B(i) * C)) + sum((A(i) * C) ./ (I(i, :) .* (1 + b * C))));
-                f_grad = @(b) (-sum((A(i) * (C .^ 2)) ./ (I(i, :) .* ((1 + b * C) .^ 2))) + sum(C ./ (1 + B(i) * C)));
-                f = @(b) fff(b, f_cost, f_grad);
-                B(i) = fmincon(f, B(i), [], [], [], [], 0, [], [], ...
-                    optimset('Algorithm', 'sqp', 'GradObj', 'on', 'Display', 'off'));
-            end
+            % optimizing A
+            F = bsxfun(@rdivide, C, 1 + B * C);
+            A = (sum((I .^ alpha) .* (F .^ beta), 2) ./ sum(F .^ (alpha + beta), 2)) .^ (1 / alpha);
+            A = max(A, 0);
+
+            % optimizing C
+            F = (A * C) ./ (1 + B * C);
+            C = C - 0.5 * (sum((1 ./ (A * (C .^ 2))) .* (F .^ (beta + 1)) .* (I .^ alpha - F .^ alpha), 1) + alpha_C * C) ./ ...
+                (sum((1 ./ bsxfun(@times, C .^ 2, (1 + B * C) .^ 2)) .* (F .^ beta) .* ((F .^ alpha) .* (2 * B * C - alpha - beta + 1) - ...
+                (I .^ alpha) .* (2 * B * C - beta + 1)), 1) + alpha_C/2);
+            C = max(C, 0);
+
+            % optimizing B
+            F = (A * C) ./ (1 + B * C);
+            B = B + 0.5 * ((1 ./ A) .* sum((F .^ (beta + 1)) .* (I .^ alpha - F .^ alpha), 2) + alpha_B * B) ./ ...
+                (sum(bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2) .* (F .^ beta) .* ((beta + 1) * (I .^ alpha) - ...
+                (alpha + beta + 1) * (F .^ alpha)), 2) + alpha_B/2);
+            B = max(B, 0);
         end
-        
-        %B = B .* (sum((A * (C .^ 2)) ./ (I .* ((1 + B * C) .^ 2)), 2) ./ ...
-        %    sum(bsxfun(@rdivide, C, 1 + B * C), 2));
-        
-        % quadratic approximation
-        
-        
-        
-        
-%         B = projected_grad(B, maxIterCnt, 1e-15, ...
-%             @(B_arg) nmf_alpha_beta_divergence(I, langmuir_func(A, B_arg, C), alpha, beta), ...
-%             @(B_arg) nonlinear_alpha_beta_grad_B(I, A, B_arg, C, alpha, beta));
-        %B = projected_grad_B(I, A, B, C, alpha, beta, maxIterCnt, 1e-15);        
+             
         
         % routines
         [A, B, C] = nonlinear_normalize_prod(A, B, C);
@@ -131,7 +120,7 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         %if (currIter > 10000)
         %    break;
         %end
-        fprintf('%d: %f\n', currIter, currQuality);
+        %fprintf('%d: %f\n', currIter, currQuality);
         %fprintf('%d: %e\n', currIter, C(525));
         
     end
