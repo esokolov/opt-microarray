@@ -145,10 +145,10 @@ plot(x, y1);
 %plot(x, y2, 'b');
 
 %% A quad approx
-probe_idx = 1;
+probe_idx = 18;
 
 Q = langmuir_func(A, B, C);
-f_a_plot = @(a) nmf_alpha_beta_divergence(I(probe_idx, :), (a * C) ./ (1 + B(probe_idx) * C), alpha, beta) + alpha_A/2 * a;
+f_a_plot = @(a) nmf_alpha_beta_divergence(I(probe_idx, :), (a * C) ./ (1 + B(probe_idx) * C), alpha, beta) + 0.5*alpha_A/2 * a^2;
 
 %rpk = (A(array_idx) * C ./ (I(array_idx, :)));
 %f_b_approx = @(b) sum(rpk ./ (1 + B_old(array_idx) * C) - (rpk .* C ./ (1 + B_old(array_idx) * C) .^ 2) * (b - B_old(array_idx)) + ...
@@ -156,13 +156,13 @@ f_a_plot = @(a) nmf_alpha_beta_divergence(I(probe_idx, :), (a * C) ./ (1 + B(pro
 %    log(1 + C * B_old(array_idx)) + (C ./ (1 + C * B_old(array_idx))) * (b - B_old(array_idx)) ...
 %    - 0.5 * (C .^ 2 ./ (1 + C * B_old(array_idx)) .^ 2) * (b - B_old(array_idx)) .^ 2);
 F1 = (A(probe_idx) * C) ./ (1 + B(probe_idx) * C);
-f_a_approx = @(a) nmf_alpha_beta_divergence(I(probe_idx, :), Q(probe_idx, :), alpha, beta) + alpha_A/2 * a + ...
+f_a_approx = @(a) nmf_alpha_beta_divergence(I(probe_idx, :), Q(probe_idx, :), alpha, beta) + 0.5*alpha_A/2 * a^2 + ...
     (alpha_A * A(probe_idx) + (1/alpha) * (1 ./ (A(probe_idx) + eps)) .* sum(((F1 + eps) .^ beta) .* ((F1 + eps) .^ alpha - (I(probe_idx, :) + eps) .^ alpha), 2)) * (a - A(probe_idx)) + ...
                 0.5 * (alpha_A + (1 / alpha) * ((1 ./ (A(probe_idx) + eps)) .^ 2) .* ...
                 sum(((F1 + eps) .^ beta) .* ((alpha + beta - 1) * ((F1 + eps) .^ alpha) - (beta - 1) * ((I(probe_idx, :) + eps) .^ alpha)), 2))...
                 * ((a - A(probe_idx)) .^ 2);
 
-x = 0.005:0.01:10;
+x = 1e160:1e159:1e162;
 y = x;
 y1 = x;
 y2 = x;
@@ -173,4 +173,48 @@ end
 figure;
 plot(x, y, 'r');
 hold on;
+%plot(x, y1);
+
+%% B quad approx
+probe_idx = 18;
+
+Q = langmuir_func(A, B, C);
+f_b_plot = @(b) nmf_alpha_beta_divergence(I(probe_idx, :), (A(probe_idx) * C) ./ (1 + b * C), alpha, beta) + 0.5*alpha_B/2 * b^2;
+
+%rpk = (A(array_idx) * C ./ (I(array_idx, :)));
+%f_b_approx = @(b) sum(rpk ./ (1 + B_old(array_idx) * C) - (rpk .* C ./ (1 + B_old(array_idx) * C) .^ 2) * (b - B_old(array_idx)) + ...
+%    ((rpk .* C .^ 2) ./ (1 + B_old(array_idx) * C) .^ 3) * (b - B_old(array_idx)) .^ 2 + ...
+%    log(1 + C * B_old(array_idx)) + (C ./ (1 + C * B_old(array_idx))) * (b - B_old(array_idx)) ...
+%    - 0.5 * (C .^ 2 ./ (1 + C * B_old(array_idx)) .^ 2) * (b - B_old(array_idx)) .^ 2);
+F1 = (A(probe_idx) * C) ./ (1 + B(probe_idx) * C);
+f_b_approx = @(b) nmf_alpha_beta_divergence(I(probe_idx, :), (A(probe_idx) * C) ./ (1 + b * C), alpha, beta) + 0.5*alpha_B/2 * b^2 + ...
+    ((1 ./ (A(probe_idx) + eps)) .* sum(((F1 + eps) .^ (beta + 1)) .* ((I(probe_idx, :) + eps) .^ alpha - (F1 + eps) .^ alpha), 2) + alpha_B * b) * (b - B(probe_idx)) + ...
+                0.5 * (sum(bsxfun(@rdivide, C .^ 2, (1 + B(probe_idx) * C) .^ 2) .* ((F1 + eps) .^ beta) .* ((beta + 1) * ((I(probe_idx, :) + eps) .^ alpha) - ...
+                (alpha + beta + 1) * ((F1 + eps) .^ alpha)), 2) + alpha_B) ...
+                * ((b - B(probe_idx)) .^ 2);
+            
+f_b_fd = @(b) ((1 ./ (A(probe_idx) + eps)) .* sum((((A(probe_idx) * C) ./ (1 + b * C) + eps) .^ (beta + 1)) .* ((I(probe_idx, :) + eps) .^ alpha - ((A(probe_idx) * C) ./ (1 + b * C) + eps) .^ alpha), 2) + alpha_B * b);
+            
+f_b_sd = @(b) 0.5 * (sum(bsxfun(@rdivide, C .^ 2, (1 + b * C) .^ 2) .* (((A(probe_idx) * C) ./ (1 + b * C) + eps) .^ beta) .* ((beta + 1) * ((I(probe_idx, :) + eps) .^ alpha) - ...
+                (alpha + beta + 1) * (((A(probe_idx) * C) ./ (1 + b * C) + eps) .^ alpha)), 2) + alpha_B);
+
+x = 0.347:0.00001:0.353;
+%x = 0.2:0.001:0.5;
+y = x;
+y1 = x;
+y2 = x;
+y3 = x;
+for j = 1:length(x)
+    y(j) = f_b_plot(x(j));
+    y1(j) = f_b_approx(x(j));
+    y2(j) = f_b_sd(x(j));
+    y3(j) = f_b_fd(x(j));
+end
+figure;
+plot(x, y, 'r');
+hold on;
 plot(x, y1);
+%plot(x, y3, 'k');
+%hold on;
+%grid on;
+%plot([B(probe_idx) B(probe_idx)], [min(y3) max(y3)], '--');

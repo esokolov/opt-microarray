@@ -50,12 +50,11 @@ function [C isConverged] = nonlinear_alpha_beta_fixedAB(I, A, B, alpha, beta, ma
                 bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C ./ (2 * quantile(I, 0.9)));
             C = max(C, 0);
         else
-            % optimizing C
             F = (A * C) ./ (1 + B * C);
-            C = C - 0.5 * (sum((1 ./ (eps + A * (C .^ 2))) .* ((F + eps) .^ (beta + 1)) .* ((I + eps) .^ alpha - (F + eps) .^ alpha), 1) + alpha_C * C) ./ ...
-                (sum((1 ./ (eps + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((F + eps) .^ beta) .* (((F + eps) .^ alpha) .* (2 * B * C - alpha - beta + 1) - ...
-                ((I + eps) .^ alpha) .* (2 * B * C - beta + 1)), 1) + alpha_C/2);
-            C = max(C, 0);
+            C = C - (alpha_C * C + (1 ./ (alpha * C .^ 2)) .* sum(bsxfun(@times, 1 ./ A, (F .^ (beta + 1)) .* (F .^ alpha - (I + eps) .^ alpha)), 1)) ./ ...
+                (alpha_C + (1 ./ (alpha * C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* (F .^ beta) .* ((F .^ alpha) .* (alpha - 2 * B * C + beta - 1) + ...
+                ((I + eps) .^ alpha) .* (2 * B * C - beta + 1)), 1));
+            C = max(C, 1e-12);
         end
              
         
@@ -76,7 +75,7 @@ function [C isConverged] = nonlinear_alpha_beta_fixedAB(I, A, B, alpha, beta, ma
         %if (currIter > 10000)
         %    break;
         %end
-        fprintf('%d: %f\n', currIter, currQuality);
+        %fprintf('%d: %f\n', currIter, currQuality);
         %fprintf('%d: %e\n', currIter, C(525));
         
     end
