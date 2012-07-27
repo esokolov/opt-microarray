@@ -54,7 +54,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
                 ((1 / alpha) * ((1 ./ (A + eps_nnz)) .^ 2) .* ...
                 sum((F .^ beta) .* ((alpha + beta - 1) * (F .^ alpha) - (beta - 1) * ((I + eps_nnz) .^ alpha)), 2) + ...
                 2 * alpha_reg * sum(bsxfun(@rdivide, (1 + B * C) .^ 2, A .^ 3), 2));
-            A = max(A, eps_nnz);
+            A = max(A, 1e-12);
 
             % optimizing C
             F = (A * C) ./ (1 + B * C);
@@ -66,19 +66,19 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
                 ((1 ./ (alpha * C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* (F .^ beta) .* ((F .^ alpha) .* (alpha - 2 * B * C + beta - 1) + ...
                 ((I + eps_nnz) .^ alpha) .* (2 * B * C - beta + 1)), 1) + ...
                 2 * alpha_reg * sum((B .^ 2) ./ A, 1));
-            C = max(C, eps_nnz);
+            C = max(C, 1e-12);
 
             % optimizing B
             F = (A * C) ./ (1 + B * C);
             B = B - ((1 / alpha) * sum(bsxfun(@rdivide, C, 1 + B * C) .* (F .^ beta) .* ((I + eps_nnz) .^ alpha - F .^ alpha), 2) + ...
                 2 * alpha_reg * sum(bsxfun(@rdivide, C, A) .* (1 + B * C), 2)) ./ ...
                 ((1 / alpha) * sum((bsxfun(@rdivide, C, 1 + B * C) .^ 2) .* ...
-                (F .^ beta) .* ((alpha + beta + 1) * (F .^ alpha) - (beta + 1) * ((I + eps_nnz) .^ alpha)), 2) + ...
+                (F .^ beta) .* ((alpha + beta + 1) * (F .^ alpha) - (beta + 1) * ((I + eps) .^ alpha)), 2) + ...
                 2 * alpha_reg ./ A);
             %B = B + ((1 / alpha) * (1 ./ (A + eps)) .* sum(((F + eps) .^ (beta + 1)) .* ((I + eps) .^ alpha - (F + eps) .^ alpha), 2) + alpha_B * B) ./ ...
             %    ((1 / alpha) * sum(bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2) .* ((F + eps) .^ beta) .* ((beta + 1) * ((I + eps) .^ alpha) - ...
             %    (alpha + beta + 1) * ((F + eps) .^ alpha)), 2) + alpha_B);
-            B = max(B, eps_nnz);
+            B = max(B, 1e-12);
         end
         
         %if mod(currIter, 1) == 0
@@ -102,7 +102,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         end
         
         % routines
-        if (alpha_reg == 0)
+        if (alpha_A == 0 && alpha_B == 0 && alpha_C == 0)
             [A, B, C] = nonlinear_normalize_prod(A, B, C);
         end
         
