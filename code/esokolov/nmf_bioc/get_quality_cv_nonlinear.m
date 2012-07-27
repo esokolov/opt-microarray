@@ -17,10 +17,10 @@ function [mad_A, outliers_A, mad_B, outliers_B, mad_C, outliers_C...
 
     fprintf(' 1');
     [A1_arrays, B1_arrays, C1_arrays, Avect1_arrays, Bvect1_arrays, A1_slices_arrays, B1_sliced_arrays] = ...
-        nonlinear_calibrate_model(sample1, sample1_sliced, inten_genes_idx, factorization_func);
+        nonlinear_calibrate_model(sample1, sample1_sliced, inten_genes_idx, factorization_func, false);
     fprintf(' 2');
     [A2_arrays, B2_arrays, C2_arrays, Avect2_arrays, Bvect2_arrays, A2_slices_arrays, B2_sliced_arrays] = ...
-        nonlinear_calibrate_model(sample2, sample2_sliced, inten_genes_idx, factorization_func);
+        nonlinear_calibrate_model(sample2, sample2_sliced, inten_genes_idx, factorization_func, false);
 
     %quality_arrays = sum((Avect1 - Avect2) .^ 2);
     tmp = Avect1_arrays - Avect2_arrays;
@@ -71,10 +71,10 @@ function [mad_A, outliers_A, mad_B, outliers_B, mad_C, outliers_C...
 
     fprintf(' 3');
     [A1_probes, B1_probes, C1_probes, Avect1_probes, Bvect1_probes, A1_slices_probes, B1_sliced_probes] = ...
-        nonlinear_calibrate_model(sample1, sample1_sliced, sample1_genes_idx, factorization_func);
+        nonlinear_calibrate_model(sample1, sample1_sliced, sample1_genes_idx, factorization_func, false);
     fprintf(' 4');
     [A2_probes, B2_probes, C2_probes, Avect2_probes, Bvect2_probes, A2_slices_probes, B2_sliced_probes] = ...
-        nonlinear_calibrate_model(sample2, sample2_sliced, sample2_genes_idx, factorization_func);
+        nonlinear_calibrate_model(sample2, sample2_sliced, sample2_genes_idx, factorization_func, false);
 
 
     tmp = C1_probes(:) - C2_probes(:);

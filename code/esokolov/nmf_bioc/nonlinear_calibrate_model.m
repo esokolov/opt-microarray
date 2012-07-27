@@ -1,4 +1,4 @@
-function [A, B, C, Avect, Bvect, A_sliced, B_sliced, notConvergedCnt, normProblemsCnt] = nonlinear_calibrate_model(I, I_sliced, I_genes_idx, factorization_func)
+function [A, B, C, Avect, Bvect, A_sliced, B_sliced, notConvergedCnt, normProblemsCnt] = nonlinear_calibrate_model(I, I_sliced, I_genes_idx, factorization_func, renorm)
     sampleSize = size(I, 2) - 2;
     G = length(I_sliced);
 
@@ -18,9 +18,11 @@ function [A, B, C, Avect, Bvect, A_sliced, B_sliced, notConvergedCnt, normProble
         %norm = mean(aff);
         %aff = aff / norm;
         %conc = conc * norm;
-        [aff, b, conc, isProblem] = nonlinear_normalize_prod(aff, b, conc);
-        
-        normProblemsCnt = normProblemsCnt + isProblem;
+        if (renorm)
+            [aff, b, conc, isProblem] = nonlinear_normalize_prod(aff, b, conc);
+
+            normProblemsCnt = normProblemsCnt + isProblem;
+        end
         
         aff(isnan(aff)) = 0;
         aff(isinf(aff)) = max(max(aff(~isinf(aff))));
@@ -34,6 +36,7 @@ function [A, B, C, Avect, Bvect, A_sliced, B_sliced, notConvergedCnt, normProble
         
         %A_sliced{i}(isnan(A_sliced{i})) = 0;
         %A_sliced{i}(isinf(A_sliced{i})) = 1e10;
+        %fprintf('%d\n', i);
     end
     
     C(isnan(C)) = 0;    
