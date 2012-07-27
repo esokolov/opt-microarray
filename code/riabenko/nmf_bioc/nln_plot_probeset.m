@@ -8,6 +8,7 @@ for i=1:size(I,1)
     plot(x, y,'r');
     title('');
     xlim([0 max(C)]);
+    ylim([0 quantile(I(i,:),0.995)]);
     box('on');
     title(['A=',num2str(A(i)),', B=',num2str(B(i))]);
 end
