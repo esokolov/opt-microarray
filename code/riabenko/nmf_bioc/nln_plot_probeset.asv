@@ -1,4 +1,4 @@
-function nln_plot_probeset(I,A,B,C)
+function(I,A,B,C)
 figure
 for i=1:size(I,1)
     subplot(5,5,i)
