@@ -136,6 +136,8 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
     
     %isConverged = (currIter < maxIterCnt);
     
+    [A, B, C] = nonlinear_normalize_prod(A, B, C);
+    
     A(isnan(A)) = 0;
     C(isnan(C)) = 0;
 end

@@ -65,23 +65,26 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
                 (beta^2 * sum(bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2) .* ((F + eps) .^ beta) .* ...
                 ((beta + 1) * log((F + eps) ./ (I + eps)) + 1), 2) + alpha_B/2);
             B = max(B, 1e-12);
-        elseif (beta == 0)
-            A = (sum((I + eps) .^ alpha, 2) ./ sum((eps + bsxfun(@rdivide, C, 1 + B * C)) .^ alpha, 2)) .^ (1 / alpha);
+        elseif (beta == 0)  % OK
+            %A = (sum((I + eps) .^ alpha, 2) ./ sum((eps + bsxfun(@rdivide, C, 1 + B * C)) .^ alpha, 2)) .^ (1 / alpha);
+            F = (A * C) ./ (1 + B * C);
+            A = A - (alpha_A * A + (1 ./ (alpha * A)) .* sum(F .^ alpha - I .^ alpha, 2)) ./ ...
+                (alpha_A + (1 ./ (alpha * A .^ 2)) .* sum((alpha - 1) * (F .^ alpha) + I .^ alpha, 2));
             A = max(A, 1e-12);
             
             C = C - ((1 / alpha) * sum((((eps + (A * C) ./ (1 + B * C)) .^ alpha) - (eps + I) .^ alpha) ./ ...
                 bsxfun(@times, C, 1 + B * C), 1) + alpha_C * C) ./ ...
                 ((1 / alpha) * sum(((alpha - 1 - 2 * B * C) .* ((eps + (A * C) ./ (1 + B * C)) .^ alpha) + ...
                 (1 + 2 * B * C) .* ((I + eps) .^ alpha)) ./ ...
-                bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C/2);
+                bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C);
             C = max(C, 1e-12);
             
             B = B -  ((1 / alpha) * sum(bsxfun(@times, C, (I + eps) .^ alpha - (eps + (A * C) ./ (1 + B * C)) .^ alpha) ./ ...
                 (1 + B * C), 2) + alpha_B * B) ./ ...
                 ((1 / alpha) * sum(bsxfun(@times, C .^ 2, (alpha + 1) * (eps + (A * C) ./ (1 + B * C)) .^ alpha - (I + eps) .^ alpha) ./ ...
-                ((1 + B * C) .^ 2), 2) + alpha_B/2);
+                ((1 + B * C) .^ 2), 2) + alpha_B);
             B = max(B, 1e-12);
-        elseif (alpha == -beta)
+        elseif (alpha == -beta)     % OK
             %A = ((1 / size(I, 2)) * sum((bsxfun(@rdivide, I .* (1 + B * C), C) + eps) .^ alpha, 2)) .^ (1 / alpha);
             direction = -(alpha_A * A + size(I, 2) ./ (alpha * A) - ...
                 (1 ./ (alpha * A .^ (alpha + 1))) .* sum(bsxfun(@rdivide, I .* (1 + B * C), C) .^ alpha, 2)) ./ ...
@@ -189,16 +192,19 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         
         %C_mean_hist(currIter) = mean(abs(C - C_prev_iter));
         %C_max_hist(currIter) = max(abs(C - C_prev_iter));
-        C_max_hist(currIter) = mean(C);
+        
+        [A_norm, B_norm, C_norm] = nonlinear_normalize_prod(A, B, C);
+        
+        C_max_hist(currIter) = mean(C_norm);
         qual_hist(currIter) = currQuality;
-        B_max_hist(currIter) = mean(B);
-        A_max_hist(currIter) = mean(A);
-        corr_B_hist(currIter) = corr(B, quantile(I', 0.9)', 'type', 'Spearman');
+        B_max_hist(currIter) = mean(B_norm);
+        A_max_hist(currIter) = mean(A_norm);
+        corr_B_hist(currIter) = corr(B_norm, quantile(I', 0.9)', 'type', 'Spearman');
         
-        %C_test = nonlinear_alpha_beta_fixedAB(I_test, A, B, alpha, beta, maxIterCnt, eps, alpha_C, 1);
-        %test_qual_hist(currIter) = nmf_alpha_beta_divergence(I_test, langmuir_func(A, B, C_test), alpha, beta);
+        C_test = nonlinear_alpha_beta_fixedAB(I_test, A, B, alpha, beta, maxIterCnt, eps, alpha_C, 1);
+        test_qual_hist(currIter) = nmf_alpha_beta_divergence(I_test, langmuir_func(A, B, C_test), alpha, beta);
         
-        fprintf('%d: %f\t%f\t%e\t%e\n', currIter, currQuality, currQuality_reg,  max(C), max(B));
+        %fprintf('%d: %f\t%f\t%e\t%e\n', currIter, currQuality, currQuality_reg,  max(C), max(B));
         %fprintf('%d: %e\n', currIter, C(912));
         
         C_prev_iter = C;        
@@ -213,6 +219,8 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
     qual_hist = qual_hist(1:currIter);
     corr_B_hist = corr_B_hist(1:currIter);
     test_qual_hist = test_qual_hist(1:currIter);
+    
+    [A, B, C] = nonlinear_normalize_prod(A, B, C);
     
     A(isnan(A)) = 0;
     C(isnan(C)) = 0;

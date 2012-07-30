@@ -20,7 +20,7 @@ end
 figure; plot(x, y)
 
 %% C quad approx
-array_idx = 434;
+array_idx = 99;
 %array_idx = 57;
 %array_idx = 80;
 %array_idx = 700;
@@ -31,7 +31,7 @@ f_c_approx = @(c, c0) sum(A * c0 ./ (I(:, array_idx) .* (1 + B * c0)) + (A ./ (I
     (A .* B ./ (I(:, array_idx) .* (1 + B * c0) .^ 3)) * ((c - c0) .^ 2) - ...
     log(A * c0 ./ (1 + B * c0)) - (1 ./ (c0 + B * (c0^2))) * (c - c0) + ...
     ((B * c0 + 0.5) ./ (c0^2 * (1 + B * c0) .^ 2)) * ((c - c0) .^ 2));
-x = 0:1:2000;
+x = 1e106:1e106:1e109;
 y = x;
 y1 = x;
 y_reg = x;
