@@ -11,6 +11,8 @@ function [C isConverged] = nonlinear_alpha_beta_fixedAB(I, A, B, alpha, beta, ma
     if (nargin < 9)
         use_term_criteria = true;
     end
+    
+    eps_nnz = 1e-12;
         
     %[A B C] = nonlinear_init_als(I, eps);
     
@@ -28,33 +30,39 @@ function [C isConverged] = nonlinear_alpha_beta_fixedAB(I, A, B, alpha, beta, ma
     for currIter = 1:maxIterCnt
         if (alpha == 0 && beta == 0)
             F = (A * C) ./ (1 + B * C);
-            C = C + 0.5 * (sum((1 ./ (eps + bsxfun(@plus, C, B * (C .^ 2)))) .* (log(I + eps) - log(F + eps)), 1) + alpha_C * C) ./ ...
-                (sum((1 ./ (eps + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((2 * B * C + 1) .* log((I + eps) ./ (F + eps)) + 1), 1) + alpha_C/2);            
-            C = max(C, 0);
+            C = C - ((1 ./ C) .* sum((1 ./ (1 + B * C)) .* log((F + eps_nnz) ./ (I + eps_nnz)), 1) + alpha_C * C) ./ ...
+                ((1 ./ (C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* ...
+                (1 + (2 * B * C + 1) .* log((I + eps_nnz) ./ (F + eps_nnz))), 1) + alpha_C);
+            C = max(C, eps_nnz);
         elseif (alpha == 0)
             F = (A * C) ./ (1 + B * C);
-            C = C - 0.5 * (sum(((F + eps) .^ (beta + 1)) .* log((F + eps) ./ (I + eps)) .* (1 ./ (eps + A * (C .^ 2))), 1) + alpha_C * C) ./ ...
-                (sum((1 ./ (eps + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((F + eps) .^ beta) .* ...
-                (1 - (2 * B * C - beta + 1) .* log((F + eps) ./ (I + eps))), 1) + alpha_C/2);
-            C = max(C, 0);
-        elseif (beta == 0)
-            C = C - 0.5 * (sum((((eps + (A * C) ./ (1 + B * C)) .^ alpha) - (eps + I) .^ alpha) ./ ...
+            C = C - ((1 ./ (C .^ 2)) .* sum(bsxfun(@times, 1 ./ A, power_my(F, beta + 1) .* log((F + eps_nnz) ./ (I + eps_nnz))), 1) + alpha_C * C) ./ ...
+                ((1 ./ (C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* power_my(F, beta) .* ...
+                (1 + (beta - 1 - 2 * B * C) .* log((F + eps_nnz) ./ (I + eps_nnz))), 1) + alpha_C);
+            C = max(C, eps_nnz);
+        elseif (beta == 0)  % OK
+            C = C - ((1 / alpha) * sum(((power_my((eps_nnz + (A * C) ./ (1 + B * C)), alpha)) - power_my((eps_nnz + I), alpha)) ./ ...
                 bsxfun(@times, C, 1 + B * C), 1) + alpha_C * C) ./ ...
-                (sum(((alpha - 1 - 2 * B * C) .* ((eps + (A * C) ./ (1 + B * C)) .^ alpha) + ...
-                (1 + 2 * B * C) .* ((I + eps) .^ alpha)) ./ ...
-                bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C/2);
-            C = max(C, 0);
-        elseif (alpha == -beta)
-            C = C - 0.5 * (sum((1 - (eps + (I .* (1 + B * C)) ./ (A * C)) .^ alpha) ./ (eps + bsxfun(@times, C, 1 + B * C)), 1) + alpha_C * C ./ quantile(I, 0.9))./ ...
-                (sum(((((I .* (1 + B * C)) ./ (A * C) + eps) .^ alpha) .* (2 * B * C + alpha + 1) - 2 * B * C - 1) ./ ...
-                bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C ./ (2 * quantile(I, 0.9)));
-            C = max(C, 0);
+                ((1 / alpha) * sum(((alpha - 1 - 2 * B * C) .* (power_my((eps_nnz + (A * C) ./ (1 + B * C)), alpha)) + ...
+                (1 + 2 * B * C) .* power_my((I + eps_nnz), alpha)) ./ ...
+                bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C);
+            C = max(C, eps_nnz);
+        elseif (alpha == -beta)     % OK
+            direction = - 0.5 * ((1 / alpha) * sum((1 - power_my((eps_nnz + (I .* (1 + B * C)) ./ (A * C)), alpha)) ./ (eps_nnz + bsxfun(@times, C, 1 + B * C)), 1) + alpha_C * C)./ ...
+                ((1 / alpha) * sum((power_my(((I .* (1 + B * C)) ./ (A * C) + eps_nnz), alpha) .* (2 * B * C + alpha + 1) - 2 * B * C - 1) ./ ...
+                bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C);
+            %direction(C == eps_nnz & direction < 0) = 0;
+            C = C + direction;
+            C = max(C, eps_nnz);
         else
             F = (A * C) ./ (1 + B * C);
-            C = C - (alpha_C * C + (1 ./ (alpha * C .^ 2)) .* sum(bsxfun(@times, 1 ./ A, (F .^ (beta + 1)) .* (F .^ alpha - (I + eps) .^ alpha)), 1)) ./ ...
-                (alpha_C + (1 ./ (alpha * C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* (F .^ beta) .* ((F .^ alpha) .* (alpha - 2 * B * C + beta - 1) + ...
-                ((I + eps) .^ alpha) .* (2 * B * C - beta + 1)), 1));
-            C = max(C, 1e-12);
+            %C = C - (sum((1 ./ (eps_nnz + A * (C .^ 2))) .* ((F + eps_nnz) .^ (beta + 1)) .* ((I + eps_nnz) .^ alpha - (F + eps_nnz) .^ alpha), 1) + alpha_C * C) ./ ...
+            %    (sum((1 ./ (eps_nnz + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((F + eps_nnz) .^ beta) .* (((F + eps_nnz) .^ alpha) .* (2 * B * C - alpha - beta + 1) - ...
+            %    ((I + eps_nnz) .^ alpha) .* (2 * B * C - beta + 1)), 1) + alpha_C);
+            C = C - (alpha_C * C + (1 ./ (alpha * C .^ 2)) .* sum(bsxfun(@times, 1 ./ A, (power_my(F, beta + 1)) .* (power_my(F, alpha) - power_my(I + eps_nnz, alpha))), 1)) ./ ...
+                (alpha_C + (1 ./ (alpha * C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* power_my(F, beta) .* (power_my(F, alpha) .* (alpha - 2 * B * C + beta - 1) + ...
+                (power_my(I + eps_nnz, alpha)) .* (2 * B * C - beta + 1)), 1));
+            C = max(C, eps_nnz);
         end
              
         
@@ -84,103 +92,3 @@ function [C isConverged] = nonlinear_alpha_beta_fixedAB(I, A, B, alpha, beta, ma
     
     C(isnan(C)) = 0;
 end
-
-function [a1 a2] = fff(c, f_cost, f_grad)
-    a1 = f_cost(c);
-    a2 = f_grad(c);
-end
-
-function X_new = projected_grad(X, maxIterCnt, eps, cost_func, grad_func)
-    sigma = 1/4;
-    eta_dec = 0.5;
-    eta_init = max(1000 * max(X), 1);
-    
-    prevCost = -1;
-    for currIter = 1:maxIterCnt
-        currCost = cost_func(X);
-        currGrad = grad_func(X);
-        
-        if (sum(sum(abs(currGrad))) < eps)
-            break;
-        end
-        if (currIter > 1 && prevCost - currCost < eps)
-            break;
-        end
-        prevCost = currCost;
-        
-        eta = eta_init;
-        while (eta > eps)
-            X_new = max(X - eta * currGrad, 0);
-            
-            newCost = cost_func(X_new);
-            
-            armijo_cond = ((newCost - currCost) <= sigma * (currGrad(:)' * (X_new(:) - X(:))));
-            if armijo_cond
-                break;
-            else
-                eta = eta * eta_dec;
-            end
-        end
-        
-        X = X_new;
-        
-        break;
-    end
-    
-    X_new = X;
-end
-
-function B_new = projected_grad_B(I, A, B, C, alpha, beta, maxIterCnt, eps)
-    sigma = 1/4;
-    eta_dec = 0.5;
-    eta_init = max(1000 * max(B), 1);
-    
-    prevCost = -1;
-    for currIter = 1:maxIterCnt
-        currCost = nmf_alpha_beta_divergence(I, langmuir_func(A, B, C), alpha, beta);
-        currGrad = nonlinear_alpha_beta_grad_B(I, A, B, C, alpha, beta);
-        
-        if (sum(sum(abs(currGrad))) < eps)
-            break;
-        end
-        if (currIter > 1 && prevCost - currCost < eps)
-            break;
-        end
-        prevCost = currCost;
-        
-        eta = eta_init;
-        while (eta > eps)
-            B_new = max(B - eta * currGrad, 0);
-            
-            newCost = nmf_alpha_beta_divergence(I, langmuir_func(A, B_new, C), alpha, beta);
-            
-            armijo_cond = ((newCost - currCost) <= sigma * (currGrad(:)' * (B_new(:) - B(:))));
-            if armijo_cond
-                break;
-            else
-                eta = eta * eta_dec;
-            end
-        end
-        
-        B = B_new;
-        %prevCost = newCost;
-        break;
-    end
-    
-    B_new = B;
-end
-
-function grad = nonlinear_alpha_beta_grad_B_special(I, A, B, C)
-    grad = -sum( ((A * C) ./ I - (1 + B * C)) .* bsxfun(@rdivide, C, (1 + B * C) .^ 2), 2);
-end
-
-function grad = nonlinear_alpha_beta_grad_C_special(I, A, B, C)
-    grad = sum( (bsxfun(@rdivide, A, I) - bsxfun(@rdivide, 1 + B * C, C)) .* bsxfun(@rdivide, 1, (1 + B * C) .^ 2), 1);
-end
-
-% function grad = nonlinear_alpha_beta_grad_B(I, A, B, C, alpha, beta)
-%     F = (A * C) ./ (1 + B * C);
-%     D = (A * (C .^ 2)) ./ ((1 + B * C) .^ 2);
-%     grad = sum(-(((I + eps) .^ alpha) .* ((F + eps) .^ (beta - 1)) .* D) + ...
-%         ((F + eps) .^ (alpha + beta - 1) .* D), 2);
-% end

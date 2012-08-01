@@ -1,13 +1,14 @@
-I = 1;
-a = 2;
-c = 5;
-f = @(b) log(I) -1 + (a * c) / ( I  * (1 + c * b)) - log((a * c) / (1 + c * b));
-x = 0:0.01:10;
+%I = 1;
+%a = 2;
+%c = 5;
+%f = @(b) log(I) -1 + (a * c) / ( I  * (1 + c * b)) - log((a * c) / (1 + c * b));
+f1 = @(b) sum(log(I(16, :)) -1 - log(A(16) * C ./ (1 + b * C)) + A(16) * C ./ (I(16, :) .* (1 + b * C)));
+x = 0:0.00001:0.001;
 y = x;
-for i = 1:length(x)
-    y(i) = f(x(i));
+for j = 1:length(x)
+    y(j) = f1(x(j));
 end
-plot(x, y)
+figure; plot(x, y)
 hold on
 fl = @(b, b0) log(I) - 1 + (a*c) / (I * (1 + c * b)) - log((a*c) / (1 + c * b0)) + c * (b - b0) / (1 + c * b0);
 %%

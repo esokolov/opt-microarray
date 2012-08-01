@@ -9,18 +9,14 @@ function res = nmf_alpha_beta_divergence(I, AC, alpha, beta)
         res = sum(sum(res));
     elseif (beta == 0)
         res = (1 / alpha^2) * (power_my(I + eps, alpha) .* ...
-            (alpha * log((I + eps) ./ (AC + eps)) - 1) + power_my(AC + eps, alpha));
+            (alpha * log((I + eps) ./ (AC + eps)) - 1) + my_power(AC + eps, alpha));
         res = sum(sum(res));
     elseif (alpha == -beta)
         res = (1 / alpha^2) * (alpha * log((AC + eps) ./ ...
             (I + eps)) + power_my((I + eps) ./ (AC + eps), alpha) - 1);
         res = sum(sum(res));
     else
-        res = - (1 ./ (alpha * beta)) * (power_my(I + eps, alpha) .* ...
-            (power_my(AC + eps, beta) - (alpha / (alpha + beta)) * power_my(I + eps, beta)) - ...
-            (beta / (alpha + beta)) * power_my(AC + eps, alpha + beta));
-        res = sum(sum(res));
-    end
+        res = - (1 ./ (alpha * beta)) * (power_my(I + eps, alpha) .* (power_my(AC + eps, beta) - (alpha / (alpha + beta)) * power_my(I + eps, alpha)) - 
 %     if (alpha == 0 && beta == 0)
 %         res = 0.5 * bsxfun(@power, log(I + eps) - log(AC + eps), 2);
 %         res = sum(sum(res));

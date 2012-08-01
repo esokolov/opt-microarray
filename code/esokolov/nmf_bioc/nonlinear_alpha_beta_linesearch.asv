@@ -4,7 +4,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         use_term_criteria = true;
     end
     
-    eps_nnz = 1e-12;
+    eps_nnz_nnz = 1e-12;
         
     %[A B C] = nonlinear_init_als(I, eps_nnz);
     
@@ -41,29 +41,29 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
             %A = exp((1 / size(I, 2)) * sum(log(I + eps_nnz) - log(bsxfun(@rdivide, C, 1 + B * C) + eps_nnz), 2));
             A = A - (alpha_A * A + (1 ./ A) .* sum(log((F + eps_nnz) ./ (I + eps_nnz)), 2)) ./ ...
                 (alpha_A + (1 ./ (A .^ 2)) .* (sum(log((I + eps_nnz) ./ (F + eps_nnz)), 2) + size(I, 2)));
-            A = max(A, eps_nnz);
+            A = max(A, 1e-12);
             
             F = (A * C) ./ (1 + B * C);
             C = C - ((1 ./ C) .* sum((1 ./ (1 + B * C)) .* log((F + eps_nnz) ./ (I + eps_nnz)), 1) + alpha_C * C) ./ ...
                 ((1 ./ (C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* ...
                 (1 + (2 * B * C + 1) .* log((I + eps_nnz) ./ (F + eps_nnz))), 1) + alpha_C);
-            C = max(C, eps_nnz);
+            C = max(C, 1e-12);
             
             F = (A * C) ./ (1 + B * C);
             B = B - (sum(bsxfun(@rdivide, C, 1 + B * C) .* log((I + eps_nnz) ./ (F + eps_nnz)), 2) + alpha_B * B) ./ ...
                 (sum((bsxfun(@rdivide, C, 1 + B * C) .^ 2) .* (log((F + eps_nnz) ./ (I + eps_nnz)) + 1), 2) + alpha_B);
-            B = max(B, eps_nnz);
+            B = max(B, 1e-12);
         elseif (alpha == 0)
             F = (A * C) ./ (1 + B * C);
             A = A - (alpha_A * A + (1 ./ A) .* sum(power_my(F + eps_nnz, beta) .* log((F + eps_nnz) ./ (I + eps_nnz)), 2)) ./ ...
                 (alpha_A + (1 ./ (A .^ 2)) .* sum(power_my(F, beta) .* (1 + (beta - 1) * log((F + eps_nnz) ./ (I + eps_nnz))), 2));
-            A = max(A, eps_nnz);
+            A = max(A, 1e-12);
             
             F = (A * C) ./ (1 + B * C);
             C = C - ((1 ./ (C .^ 2)) .* sum(bsxfun(@times, 1 ./ A, power_my(F, beta + 1) .* log((F + eps_nnz) ./ (I + eps_nnz))), 1) + alpha_C * C) ./ ...
                 ((1 ./ (C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* power_my(F, beta) .* ...
                 (1 + (beta - 1 - 2 * B * C) .* log((F + eps_nnz) ./ (I + eps_nnz))), 1) + alpha_C);
-            C = max(C, eps_nnz);
+            C = max(C, 1e-12);
             
             F = (A * C) ./ (1 + B * C);
             B = B + (alpha_B * B + (1 ./ A) .* sum(power_my(F, beta + 1) .* log((F + eps_nnz) ./ (I + eps_nnz)), 2)) ./ ...
@@ -74,20 +74,20 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
             F = (A * C) ./ (1 + B * C);
             A = A - (alpha_A * A + (1 ./ (alpha * A)) .* sum(power_my(F, alpha) - power_my(I, alpha), 2)) ./ ...
                 (alpha_A + (1 ./ (alpha * A .^ 2)) .* sum((alpha - 1) * power_my(F, alpha) + power_my(I, alpha), 2));
-            A = max(A, eps_nnz);
+            A = max(A, 1e-12);
             
             C = C - ((1 / alpha) * sum(((power_my((eps_nnz + (A * C) ./ (1 + B * C)), alpha)) - power_my((eps_nnz + I), alpha)) ./ ...
                 bsxfun(@times, C, 1 + B * C), 1) + alpha_C * C) ./ ...
                 ((1 / alpha) * sum(((alpha - 1 - 2 * B * C) .* (power_my((eps_nnz + (A * C) ./ (1 + B * C)), alpha)) + ...
                 (1 + 2 * B * C) .* power_my((I + eps_nnz), alpha)) ./ ...
                 bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C);
-            C = max(C, eps_nnz);
+            C = max(C, 1e-12);
             
             B = B - ((1 / alpha) * sum(bsxfun(@times, C, power_my(I + eps_nnz, alpha) - power_my(eps_nnz + (A * C) ./ (1 + B * C), alpha)) ./ ...
                 (1 + B * C), 2) + alpha_B * B) ./ ...
                 ((1 / alpha) * sum(bsxfun(@times, C .^ 2, (alpha + 1) * power_my(eps_nnz + (A * C) ./ (1 + B * C), alpha) - power_my(I + eps_nnz, alpha)) ./ ...
                 ((1 + B * C) .^ 2), 2) + alpha_B);
-            B = max(B, eps_nnz);
+            B = max(B, 1e-12);
         elseif (alpha == -beta)     % OK
             %A = ((1 / size(I, 2)) * sum((bsxfun(@rdivide, I .* (1 + B * C), C) + eps_nnz) .^ alpha, 2)) .^ (1 / alpha);
             direction = -(alpha_A * A + size(I, 2) ./ (alpha * A) - ...
@@ -96,14 +96,14 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
                 sum(power_my(bsxfun(@rdivide, I .* (1 + B * C), C), alpha), 2));
             %direction(A == 0 & direction < 0) = 0;
             A = A + direction;
-            A = max(A, eps_nnz);
+            A = max(A, 1e-12);
             
             direction = - 0.5 * ((1 / alpha) * sum((1 - power_my((eps_nnz + (I .* (1 + B * C)) ./ (A * C)), alpha)) ./ (eps_nnz + bsxfun(@times, C, 1 + B * C)), 1) + alpha_C * C)./ ...
                 ((1 / alpha) * sum((power_my(((I .* (1 + B * C)) ./ (A * C) + eps_nnz), alpha) .* (2 * B * C + alpha + 1) - 2 * B * C - 1) ./ ...
                 bsxfun(@times, C .^ 2, (1 + B * C) .^ 2), 1) + alpha_C);
             %direction(C == eps_nnz & direction < 0) = 0;
             C = C + direction;
-            C = max(C, eps_nnz);
+            C = max(C, 1e-12);
             
             direction = - 0.5 * ((1 / alpha) * sum((power_my((eps_nnz + bsxfun(@rdivide, I, A)), alpha)) .* (power_my((eps_nnz + bsxfun(@rdivide, 1 + B * C, C)), (alpha - 1))) - ...
                 bsxfun(@rdivide, C, 1 + B * C), 2) + alpha_B * B) ./ ...
@@ -111,7 +111,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
                 bsxfun(@rdivide, C, 1 + B * C) .^ 2, 2) + alpha_B);
             %direction(B == eps_nnz & direction < 0) = 0;
             B = B + direction;
-            B = max(B, eps_nnz);
+            B = max(B, 1e-12);
         else
             % optimizing A
             %F = bsxfun(@rdivide, C, 1 + B * C);
@@ -120,7 +120,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
             A = A - (alpha_A * A + (1/alpha) * (1 ./ (A + eps_nnz)) .* sum(power_my(F, beta) .* (power_my(F, alpha) - power_my(I + eps_nnz, alpha)), 2)) ./ ...
                 (alpha_A + (1 / alpha) * ((1 ./ (A + eps_nnz)) .^ 2) .* ...
                 sum(power_my(F, beta) .* ((alpha + beta - 1) * (power_my(F, alpha)) - (beta - 1) * (power_my(I + eps_nnz, alpha))), 2));
-            A = max(A, eps_nnz);
+            A = max(A, 1e-12);
 
             % optimizing C
             F = (A * C) ./ (1 + B * C);
@@ -130,7 +130,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
             C = C - (alpha_C * C + (1 ./ (alpha * C .^ 2)) .* sum(bsxfun(@times, 1 ./ A, (power_my(F, beta + 1)) .* (power_my(F, alpha) - power_my(I + eps_nnz, alpha))), 1)) ./ ...
                 (alpha_C + (1 ./ (alpha * C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* power_my(F, beta) .* (power_my(F, alpha) .* (alpha - 2 * B * C + beta - 1) + ...
                 (power_my(I + eps_nnz, alpha)) .* (2 * B * C - beta + 1)), 1));
-            C = max(C, eps_nnz);
+            C = max(C, 1e-12);
 
             % optimizing B
             F = (A * C) ./ (1 + B * C);
@@ -140,7 +140,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
             %B = B + ((1 / alpha) * (1 ./ (A + eps_nnz)) .* sum(((F + eps_nnz) .^ (beta + 1)) .* ((I + eps_nnz) .^ alpha - (F + eps_nnz) .^ alpha), 2) + alpha_B * B) ./ ...
             %    ((1 / alpha) * sum(bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2) .* ((F + eps_nnz) .^ beta) .* ((beta + 1) * ((I + eps_nnz) .^ alpha) - ...
             %    (alpha + beta + 1) * ((F + eps_nnz) .^ alpha)), 2) + alpha_B);
-            B = max(B, eps_nnz);
+            B = max(B, 1e-12);
         end
         
         %if mod(currIter, 10) == 0
@@ -199,7 +199,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         %    break;
         %end
         
-        if (use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
+        if (use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, 1e-6))
         %if (use_term_criteria && currIter > 1 && nonlinear_check_stopping_criteria_C(C, C_prev_iter, 1e-6))
             break;
         end
@@ -229,7 +229,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         C_prev_iter = C;        
     end
     
-    isConverged = (currIter < maxIterCnt);
+    %isConverged = (currIter < maxIterCnt);
     
     %C_mean_hist = C_mean_hist(1:currIter);
     C_max_hist = C_max_hist(1:currIter);

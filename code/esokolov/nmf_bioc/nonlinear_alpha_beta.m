@@ -129,7 +129,7 @@ function [A B C isConverged] = nonlinear_alpha_beta(I, alpha, beta, maxIterCnt, 
         %if (currIter > 10000)
         %    break;
         %end
-        %fprintf('%d: %f\n', currIter, currQuality);
+        fprintf('%d: %f\n', currIter, currQuality);
         %fprintf('%d: %e\n', currIter, C(525));
         
     end
