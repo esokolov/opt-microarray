@@ -21,4 +21,13 @@ error = [inten(:,1)  - inten(:,2);  inten(:,2)  - inten(:,3);  inten(:,1)  - int
          inten(:,25) - inten(:,26); inten(:,26) - inten(:,27); inten(:,25) - inten(:,27); ...
          inten(:,28) - inten(:,29); inten(:,29) - inten(:,30); inten(:,28) - inten(:,30); ...
          inten(:,31) - inten(:,32); inten(:,32) - inten(:,33); inten(:,31) - inten(:,33)];
-error = [error; -error];     
+error = [error; -error];    
+
+[~,p,~] = swtest(error)
+
+error_m = [inten(:,1) ./ inten(:,2);  inten(:,2) ./ inten(:,3);  inten(:,1)  ./ inten(:,3)];
+error_m = [error_m; 1./error_m];
+error_m(isinf(error_m)) = [];
+
+[h,p] = chi2gof(error_m,'cdf',{@fcdf,2,2})
+
