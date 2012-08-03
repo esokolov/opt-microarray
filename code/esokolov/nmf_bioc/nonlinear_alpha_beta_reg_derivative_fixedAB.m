@@ -97,3 +97,7 @@ function [C isConverged] = nonlinear_alpha_beta_reg_derivative_fixedAB(I, A, B, 
     
     C(isnan(C)) = 0;
 end
+
+function res = power_my(A, p)
+    res = exp(p * log(A));
+end

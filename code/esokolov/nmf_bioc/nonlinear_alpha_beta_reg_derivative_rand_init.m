@@ -1,4 +1,4 @@
-function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hist test_qual_hist time iter_cnt] = nonlinear_alpha_beta_reg_derivative(I, alpha, beta, maxIterCnt, eps, ...
+function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hist test_qual_hist] = nonlinear_alpha_beta_reg_derivative_rand_init(I, alpha, beta, maxIterCnt, eps, ...
         alpha_reg, use_term_criteria, I_test)
     if (nargin < 7)
         use_term_criteria = true;
@@ -16,6 +16,8 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
     %C = rand(1, size(I, 2)) * 1000;
     %B = rand(size(I, 1), 1);
     
+    [A C] = nmf_normalize_prod(A, C);
+    
     B = zeros(size(A));
     
     isConverged = 1;
@@ -28,18 +30,12 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
     corr_B_hist = zeros(maxIterCnt, 1);
     test_qual_hist = zeros(maxIterCnt, 1);
     
-    Aprev = A;
-    Bprev = B;
-    Cprev = C;
-    
     %C_prev_iter = C;
     
     reg_B_first = @(A, B, C)  2 * alpha_reg * sum(bsxfun(@rdivide, C, A) .* (1 + B * C), 2);
     reg_B_second = @(A, B, C)  2 * alpha_reg ./ A;
     reg_C_first = @(A, B, C)  2 * alpha_reg * sum(bsxfun(@times, 1 + B * C, B ./ A), 1);
     reg_C_second = @(A, B, C)  2 * alpha_reg * sum((B .^ 2) ./ A, 1);
-    
-    timer_id = tic;
     
     prevQuality = -1;
     for currIter = 1:maxIterCnt
@@ -160,34 +156,18 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         
         %if mod(currIter, 1) == 0
         if false
-        % на самом деле это неправильно, берется производная по A
-            %x0 = [Aprev' Bprev' Cprev];
-            %direction = [(A - Aprev)' (B - Bprev)' (C - Cprev)];
-            %ls_res = fminbnd(@(x) line_func(x, x0, direction, I, alpha, beta, alpha_C, alpha_B), 0, 10, optimset('FunValCheck', 'on'));
-            Abig = repmat(A, [1 size(I, 2)]);
-            Bbig = repmat(B, [1 size(I, 2)]);
-            Cbig = repmat(C, [size(I, 1) 1]);
-            
-            Fbig = repmat(A - Aprev, [1 size(I, 2)]);
-            Gbig = repmat(B - Bprev, [1 size(I, 2)]);
-            Hbig = repmat(C - Cprev, [size(I, 1) 1]);
-            
-            tau = linesearch_backtracking(Abig, Bbig, Cbig, Fbig, Gbig, Hbig, I, alpha, beta, alpha_A, alpha_B, alpha_C, 1e-4, 0.5, 1);
+            x0 = [Aprev' Bprev' Cprev];
+            direction = [(A - Aprev)' (B - Bprev)' (C - Cprev)];
+            ls_res = fminbnd(@(x) line_func(x, x0, direction, I, alpha, beta, alpha_C, alpha_B), 0, 10, optimset('FunValCheck', 'on'));
 
-            %X = x0 + ls_res * direction;
-            %A = X(1:size(I, 1))';
-            %B = X((size(I, 1)+1):(2*size(I, 1)))';
-            %C = X((2*size(I, 1) + 1):end);
-            
-            Anew = A + tau * (A - Aprev);
-            Bnew = B + tau * (B - Bprev);
-            Cnew = C + tau * (C - Cprev);
+            X = x0 + ls_res * direction;
+            A = X(1:size(I, 1))';
+            B = X((size(I, 1)+1):(2*size(I, 1)))';
+            C = X((2*size(I, 1) + 1):end);
 
-            if ((sum(Anew < 0) == 0) && (sum(Bnew < 0) == 0) && (sum(Cnew < 0) == 0))
-                A = Anew;
-                B = Bnew;
-                C = Cnew;
-            end
+            A = max(A, 0);
+            B = max(B, 0);
+            C = max(C, 0);
 
             Aprev = A;
             Bprev = B;
@@ -244,9 +224,6 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         %C_prev_iter = C;        
     end
     
-    time = toc(timer_id);
-    iter_cnt = currIter;
-    
     isConverged = (currIter < maxIterCnt);
     
     %C_mean_hist = C_mean_hist(1:currIter);
@@ -278,14 +255,4 @@ end
 
 function res = power_my(A, p)
     res = exp(p * log(A));
-end
-
-function step_size = linesearch_backtracking(A, B, C, F, G, H, I, alpha, beta, alpha_A, alpha_B, alpha_C, c_param, rho, init_step)
-    step_size = init_step;
-    while (nmf_alpha_beta_divergence(I, ((A + step_size * F) .* (C + step_size * H)) ./ (1 + (B + step_size * G) .* (C + step_size * H)), alpha, beta) > ...
-            nmf_alpha_beta_divergence(I, (A .* C) ./ (1 + B .* C), alpha, beta) + ...
-            c_param * step_size * sum(sum(divergence_diff_summand_line_regvoron_code(step_size, A, B, C, F, G, H, I, alpha, beta, ...
-            alpha_reg))))
-        step_size = step_size * rho;
-    end
 end

@@ -1,28 +1,30 @@
 function [A C isConverged] = nmf_alpha_beta(I, G, alpha, beta, maxIterCnt, eps)
     [A C] = nmf_init_als(I, G, eps);
     
+    eps_nnz = 1e-12;
+    
     prevQuality = -1;
     for currIter = 1:maxIterCnt
         if (alpha ~= 0)
-            Z = bsxfun(@times, bsxfun(@power, I + eps, alpha), ...
-                               bsxfun(@power, A * C + eps, beta - 1));
-            T = bsxfun(@rdivide, A' * Z, A' * bsxfun(@power, A * C + eps, alpha + beta - 1) + eps);
-            C = bsxfun(@times, C, bsxfun(@power, T + eps, 1 / alpha));
+            Z = bsxfun(@times, bsxfun(@power, I + eps_nnz, alpha), ...
+                               bsxfun(@power, A * C + eps_nnz, beta - 1));
+            T = bsxfun(@rdivide, A' * Z, A' * bsxfun(@power, A * C + eps_nnz, alpha + beta - 1) + eps_nnz);
+            C = bsxfun(@times, C, bsxfun(@power, T + eps_nnz, 1 / alpha));
             
-            Z = bsxfun(@times, bsxfun(@power, I + eps, alpha), ...
-                               bsxfun(@power, A * C + eps, beta - 1));
-            T = bsxfun(@rdivide, Z * C', bsxfun(@power, A * C + eps, alpha + beta - 1) * C' + eps);
-            A = bsxfun(@times, A, bsxfun(@power, T + eps, 1 / alpha));
+            Z = bsxfun(@times, bsxfun(@power, I + eps_nnz, alpha), ...
+                               bsxfun(@power, A * C + eps_nnz, beta - 1));
+            T = bsxfun(@rdivide, Z * C', bsxfun(@power, A * C + eps_nnz, alpha + beta - 1) * C' + eps_nnz);
+            A = bsxfun(@times, A, bsxfun(@power, T + eps_nnz, 1 / alpha));
         else
             %error('No alpha = 0 please');
-            T = A' * bsxfun(@times, bsxfun(@power, A * C + eps, alpha + beta - 1), ...
-                log(bsxfun(@rdivide, I + eps, A * C + eps) + eps));
-            T = bsxfun(@rdivide, T + eps, A' * bsxfun(@power, A * C + eps, alpha + beta - 1));
+            T = A' * bsxfun(@times, bsxfun(@power, A * C + eps_nnz, alpha + beta - 1), ...
+                log(bsxfun(@rdivide, I + eps_nnz, A * C + eps_nnz) + eps_nnz));
+            T = bsxfun(@rdivide, T + eps_nnz, A' * bsxfun(@power, A * C + eps_nnz, alpha + beta - 1));
             C = bsxfun(@times, C, exp(T));
             
-            T = bsxfun(@times, bsxfun(@power, A * C + eps, alpha + beta - 1), ...
-                log(bsxfun(@rdivide, I + eps, A * C + eps) + eps)) * C';
-            T = bsxfun(@rdivide, T + eps, bsxfun(@power, A * C + eps, alpha + beta - 1) * C');
+            T = bsxfun(@times, bsxfun(@power, A * C + eps_nnz, alpha + beta - 1), ...
+                log(bsxfun(@rdivide, I + eps_nnz, A * C + eps_nnz) + eps_nnz)) * C';
+            T = bsxfun(@rdivide, T + eps_nnz, bsxfun(@power, A * C + eps_nnz, alpha + beta - 1) * C');
             A = bsxfun(@times, A, exp(T));
         end
         

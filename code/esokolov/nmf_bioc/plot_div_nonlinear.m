@@ -2,7 +2,7 @@
 %f1 = @(b) sum(log(I(16, :)) -1 - log(A(16) * C ./ (1 + b * C)) + A(16) * C ./ (I(16, :) .* (1 + b * C)));
 array_idx = 4;
 f_b_plot = @(b) nmf_alpha_beta_divergence(I(array_idx, :), A(array_idx) * C ./ (1 + b * C), alpha, beta);
-x = 1:0.01:100;
+x = 0:0.01:1;
 y = x;
 for j = 1:length(x)
     y(j) = f_b_plot(x(j));
@@ -145,7 +145,7 @@ plot(x, y1);
 %plot(x, y2, 'b');
 
 %% A quad approx
-probe_idx = 18;
+probe_idx = 12;
 
 Q = langmuir_func(A, B, C);
 f_a_plot = @(a) nmf_alpha_beta_divergence(I(probe_idx, :), (a * C) ./ (1 + B(probe_idx) * C), alpha, beta) + 0.5*alpha_A/2 * a^2;
@@ -162,7 +162,7 @@ f_a_approx = @(a) nmf_alpha_beta_divergence(I(probe_idx, :), Q(probe_idx, :), al
                 sum(((F1 + eps) .^ beta) .* ((alpha + beta - 1) * ((F1 + eps) .^ alpha) - (beta - 1) * ((I(probe_idx, :) + eps) .^ alpha)), 2))...
                 * ((a - A(probe_idx)) .^ 2);
 
-x = 1e160:1e159:1e162;
+x = 0.1:0.001:10;
 y = x;
 y1 = x;
 y2 = x;
@@ -173,7 +173,7 @@ end
 figure;
 plot(x, y, 'r');
 hold on;
-%plot(x, y1);
+plot(x, y1);
 
 %% B quad approx
 probe_idx = 18;

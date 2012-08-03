@@ -92,3 +92,7 @@ function [C isConverged] = nonlinear_alpha_beta_fixedAB(I, A, B, alpha, beta, ma
     
     C(isnan(C)) = 0;
 end
+
+function res = power_my(A, p)
+    res = exp(p * log(A));
+end

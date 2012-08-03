@@ -1,4 +1,4 @@
-function [A, B, C, Avect, Bvect, A_sliced, B_sliced, notConvergedCnt, normProblemsCnt] = nonlinear_calibrate_model(I, I_sliced, I_genes_idx, factorization_func, renorm)
+function [A, B, C, Avect, Bvect, A_sliced, B_sliced, notConvergedCnt, normProblemsCnt, time, iter_cnt] = nonlinear_calibrate_model(I, I_sliced, I_genes_idx, factorization_func, renorm)
     sampleSize = size(I, 2) - 2;
     G = length(I_sliced);
 
@@ -9,8 +9,12 @@ function [A, B, C, Avect, Bvect, A_sliced, B_sliced, notConvergedCnt, normProble
     notConvergedCnt = 0;
     normProblemsCnt = 0;
     
+    time = zeros(G, 1);
+    iter_cnt = zeros(G, 1);
+    
+    
     parfor i = 1:G
-        [aff, b, conc, isConverged] = factorization_func(I_sliced{i});
+        [aff, b, conc, isConverged, ~, ~, ~, ~, ~, ~, time(i), iter_cnt(i)] = factorization_func(I_sliced{i});
         
         notConvergedCnt = notConvergedCnt + ~isConverged;
         

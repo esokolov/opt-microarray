@@ -1,5 +1,5 @@
-function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hist test_qual_hist time iter_cnt] = nonlinear_alpha_beta_linesearch(I, alpha, beta, maxIterCnt, eps, ...
-        alpha_A, alpha_B, alpha_C, use_term_criteria, I_test)
+function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hist test_qual_hist] = nonlinear_alpha_beta_linesearch_never_mind(I, alpha, beta, maxIterCnt, eps, ...
+        alpha_A, alpha_B, alpha_C, use_term_criteria)
     if (nargin < 8)
         use_term_criteria = true;
     end
@@ -33,8 +33,6 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
     test_qual_hist = zeros(maxIterCnt, 1);
     
     C_prev_iter = C;
-    
-    timer_id = tic;
     
     prevQuality = -1;
     for currIter = 1:maxIterCnt
@@ -145,7 +143,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
             B = max(B, 0);
         end
         
-        %if mod(currIter, 1) == 0
+        %if mod(currIter, 10) == 0
         if false
             %x0 = [Aprev' Bprev' Cprev];
             %direction = [(A - Aprev)' (B - Bprev)' (C - Cprev)];
@@ -158,7 +156,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
             Gbig = repmat(B - Bprev, [1 size(I, 2)]);
             Hbig = repmat(C - Cprev, [size(I, 1) 1]);
             
-            tau = linesearch_backtracking(Abig, Bbig, Cbig, Fbig, Gbig, Hbig, I, alpha, beta, alpha_A, alpha_B, alpha_C, 1e-4, 0.5, 1);
+            tau = linesearch_backtracking(Abig, Bbig, Cbig, Fbig, Gbig, Hbig, I, alpha, beta, 1e-4, 0.5, 1);
 
             %X = x0 + ls_res * direction;
             %A = X(1:size(I, 1))';
@@ -214,13 +212,13 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         %C_mean_hist(currIter) = mean(abs(C - C_prev_iter));
         %C_max_hist(currIter) = max(abs(C - C_prev_iter));
         
-        %[A_norm, B_norm, C_norm] = nonlinear_normalize_prod(A, B, C);
+        [A_norm, B_norm, C_norm] = nonlinear_normalize_prod(A, B, C);
         
-        %C_max_hist(currIter) = mean(C_norm);
-        %qual_hist(currIter) = currQuality;
-        %B_max_hist(currIter) = mean(B_norm);
-        %A_max_hist(currIter) = mean(A_norm);
-        %corr_B_hist(currIter) = corr(B_norm, quantile(I', 0.9)', 'type', 'Spearman');
+        C_max_hist(currIter) = mean(C_norm);
+        qual_hist(currIter) = currQuality;
+        B_max_hist(currIter) = mean(B_norm);
+        A_max_hist(currIter) = mean(A_norm);
+        corr_B_hist(currIter) = corr(B_norm, quantile(I', 0.9)', 'type', 'Spearman');
         
         %C_test = nonlinear_alpha_beta_fixedAB(I_test, A, B, alpha, beta, maxIterCnt, eps_nnz, alpha_C, 1);
         %test_qual_hist(currIter) = nmf_alpha_beta_divergence(I_test, langmuir_func(A, B, C_test), alpha, beta);
@@ -230,8 +228,6 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         
         C_prev_iter = C;        
     end
-    
-    time = toc(timer_id);
     
     isConverged = (currIter < maxIterCnt);
     
@@ -266,12 +262,11 @@ function res = power_my(A, p)
     res = exp(p * log(A));
 end
 
-function step_size = linesearch_backtracking(A, B, C, F, G, H, I, alpha, beta, alpha_A, alpha_B, alpha_C, c_param, rho, init_step)
+function step_size = linesearch_backtracking(A, B, C, F, G, H, I, alpha, beta, c_param, rho, init_step)
     step_size = init_step;
     while (nmf_alpha_beta_divergence(I, ((A + step_size * F) .* (C + step_size * H)) ./ (1 + (B + step_size * G) .* (C + step_size * H)), alpha, beta) > ...
             nmf_alpha_beta_divergence(I, (A .* C) ./ (1 + B .* C), alpha, beta) + ...
-            c_param * step_size * sum(sum(divergence_diff_summand_line_quad_code(step_size, A, B, C, F, G, H, I, alpha, beta, ...
-            alpha_A, alpha_B, alpha_C, size(I, 1), size(I, 2)))))
+            c_param * step_size * sum(sum(divergence_diff_summand_code(step_size, A, B, C, F, G, H, I, alpha, beta))))
         step_size = step_size * rho;
     end
 end

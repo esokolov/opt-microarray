@@ -1,7 +1,7 @@
-%alpha_range = -3:0.5:3;
-%beta_range = -2:0.5:7;
-alpha_range = -2:0.25:2;
-beta_range = -2:0.25:4;
+alpha_range = -3:0.5:4;
+beta_range = -2:0.5:4;
+%alpha_range = -2:0.25:2;
+%beta_range = -2:0.25:4;
 
 quality_arrays_mad = zeros(length(alpha_range), length(beta_range));
 quality_arrays_ouliers = zeros(length(alpha_range), length(beta_range));
@@ -9,9 +9,10 @@ quality_probes_mad = zeros(length(alpha_range), length(beta_range));
 quality_probes_ouliers = zeros(length(alpha_range), length(beta_range));
 concentration_dists = zeros(length(alpha_range), length(beta_range));
 goodness_of_fit_fro = zeros(length(alpha_range), length(beta_range));
-goodness_of_fit_geman = zeros(length(alpha_range), length(beta_range));
+goodness_of_fit_huber = zeros(length(alpha_range), length(beta_range));
 overfitting_native = zeros(length(alpha_range), length(beta_range));
 overfitting_fro = zeros(length(alpha_range), length(beta_range));
+overfitting_huber = zeros(length(alpha_range), length(beta_range));
 converged_cnt_arrays1 = zeros(length(alpha_range), length(beta_range));
 converged_cnt_arrays2 = zeros(length(alpha_range), length(beta_range));
 converged_cnt_probes1 = zeros(length(alpha_range), length(beta_range));
@@ -28,16 +29,16 @@ norm_problems_cnt = zeros(length(alpha_range), length(beta_range));
 %inten = inten_full;
 %inten_sliced = inten_full_sliced;
 
-inten = inten_full(:, [1:500 1001:1002]);
+inten = inten_full(:, [1:100 1001:1002]) + 1;
 inten_sliced = inten_full_sliced;
 for i = 1:length(inten_sliced)
-    inten_sliced{i} = inten_sliced{i}(:, 1:500);
+    inten_sliced{i} = inten_sliced{i}(:, 1:100) + 1;
 end
 
-inten_test = inten_full(:, 501:end);
+inten_test = inten_full(:, 901:end) + 1;
 inten_test_sliced = inten_full_sliced;
 for i = 1:length(inten_test_sliced)
-    inten_test_sliced{i} = inten_test_sliced{i}(:, 501:end);
+    inten_test_sliced{i} = inten_test_sliced{i}(:, 901:end) + 1;
 end
 
 fprintf('Generating partitions...');
@@ -81,12 +82,15 @@ for i = 1:length(alpha_range)
         
         R = inten(:, 1:end-2) - A * C;
         goodness_of_fit_fro(i, j) = norm(R, 'fro');
-        goodness_of_fit_geman(i, j) = 0.5 * sum(sum((R .^ 2) ./ (1 + R .^ 2)));
+        %goodness_of_fit_geman(i, j) = 0.5 * sum(sum((R .^ 2) ./ (1 + R .^ 2)));
+        goodness_of_fit_huber(i, j) = sum(sum(huber_func(R)));
         
         overfitting_native(i, j) = nmf_alpha_beta_divergence(inten_test(:, 1:end-2), A * C_test, alpha, beta) / (size(inten_test, 2) - 2) - ...
             nmf_alpha_beta_divergence(inten(:, 1:end-2), A * C, alpha, beta) / (size(inten, 2) - 2);
         overfitting_fro(i, j) = norm(inten_test(:, 1:end-2) - A * C_test, 'fro') / (size(inten_test, 2) - 2) - ...
             norm(inten(:, 1:end-2) - A * C, 'fro') / (size(inten, 2) - 2);
+        overfitting_huber(i, j) = sum(sum(huber_func(inten_test(:, 1:end-2) - A * C_test))) / (size(inten_test, 2) - 2) - ...
+            sum(sum(huber_func(R))) / (size(inten, 2) - 2);
         
         divergence_value(i, j) = nmf_alpha_beta_divergence(inten(:, 1:end-2), A * C, alpha, beta);
         
@@ -104,17 +108,18 @@ for i = 1:length(alpha_range)
         outliers_influence_ratio(i, j) = nmf_alpha_beta_divergence(inten(:, 1:end-2), A * C, alpha, beta) / ...
             nmf_alpha_beta_divergence_robust(inten(:, 1:end-2), A * C, alpha, beta);
 
-        fprintf('Mad(A1 - A2): %f\nMad(C1 - C2): %e\nMad(dist(C1, C2)): %e\nGoodness of fit (fro): %e\nGoodness of fit (Geman): %e\nOverfitting (alpha-beta): %e\nOverfitting (L2): %e\nDivergence: %e\nZeros influence: %e\nOutliers influence: %e\nZeros influence ratio: %e\nOutliers influence ratio: %e\nNorm problems: %d\n\n', ...
+        fprintf('Mad(A1 - A2): %f\nMad(C1 - C2): %e\nMad(dist(C1, C2)): %e\nGoodness of fit (fro): %e\nGoodness of fit (Huber): %e\nOverfitting (alpha-beta): %e\nOverfitting (L2): %e\nDivergence: %e\nZeros influence: %e\nOutliers influence: %e\nZeros influence ratio: %e\nOutliers influence ratio: %e\nNorm problems: %d\n\n', ...
             quality_arrays_mad(i, j), quality_probes_mad(i, j), concentration_dists(i, j), goodness_of_fit_fro(i, j), ...
-            goodness_of_fit_geman(i, j), overfitting_native(i, j), overfitting_fro(i, j), divergence_value(i, j), ...
+            goodness_of_fit_huber(i, j), overfitting_native(i, j), overfitting_fro(i, j), divergence_value(i, j), ...
             zero_influence(i, j), outliers_influence(i, j), zero_influence_ratio(i, j), outliers_influence_ratio(i, j), norm_problems_cnt(i, j));
 
-        save(['alpha_beta_cv_second_' num2str(alpha - min(alpha_range)) '_' num2str(beta - min(beta_range))], 'goodness_of_fit_fro', 'quality_arrays_mad', ...
+        save('alpha_beta_cv_new.mat', 'goodness_of_fit_fro', 'quality_arrays_mad', ...
             'overfitting_native', 'overfitting_fro', 'concentration_dists', ...
             'quality_arrays_ouliers', 'quality_probes_mad', 'quality_probes_ouliers', ...
             'converged_cnt_arrays1', 'converged_cnt_arrays2', 'converged_cnt_probes1', 'converged_cnt_probes2', ...
             'converged_cnt_full', 'converged_cnt_fixedA', 'divergence_value', ...
-            'zero_influence', 'outliers_influence', 'zero_influence_ratio', 'outliers_influence_ratio', 'norm_problems_cnt', 'goodness_of_fit_geman');%, ...
+            'zero_influence', 'outliers_influence', 'zero_influence_ratio', 'outliers_influence_ratio', 'norm_problems_cnt', 'goodness_of_fit_huber', ...
+            'overfitting_huber');%, ...
             %'arrays_factors_smart', 'probes_factors_smart');
     end
 end

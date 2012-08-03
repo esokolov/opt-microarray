@@ -1,5 +1,5 @@
 function res = nmf_alpha_beta_divergence(I, AC, alpha, beta)
-    eps = 1e-6;
+    eps = 1e-12;
     if (alpha == 0 && beta == 0)
         res = 0.5 * (log(I + eps) - log(AC + eps)) .^ 2;
         res = sum(sum(res));

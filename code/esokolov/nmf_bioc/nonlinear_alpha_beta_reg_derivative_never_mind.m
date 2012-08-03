@@ -1,5 +1,5 @@
-function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hist test_qual_hist time iter_cnt] = nonlinear_alpha_beta_reg_derivative(I, alpha, beta, maxIterCnt, eps, ...
-        alpha_reg, use_term_criteria, I_test)
+function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hist test_qual_hist] = nonlinear_alpha_beta_reg_derivative_never_mind(I, alpha, beta, maxIterCnt, eps, ...
+        alpha_reg, use_term_criteria)
     if (nargin < 7)
         use_term_criteria = true;
     end
@@ -8,12 +8,12 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         
     %[A B C] = nonlinear_init_als(I, eps);
     
-    [A C] = nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, eps);
+    %[A C] = nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, eps);
     
     %[A C] = nmf_normalize_prod(A, C);
     
-    %A = rand(size(I, 1), 1) * 10;
-    %C = rand(1, size(I, 2)) * 1000;
+    A = rand(size(I, 1), 1) * 10;
+    C = rand(1, size(I, 2)) * 1000;
     %B = rand(size(I, 1), 1);
     
     B = zeros(size(A));
@@ -28,18 +28,12 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
     corr_B_hist = zeros(maxIterCnt, 1);
     test_qual_hist = zeros(maxIterCnt, 1);
     
-    Aprev = A;
-    Bprev = B;
-    Cprev = C;
-    
     %C_prev_iter = C;
     
     reg_B_first = @(A, B, C)  2 * alpha_reg * sum(bsxfun(@rdivide, C, A) .* (1 + B * C), 2);
     reg_B_second = @(A, B, C)  2 * alpha_reg ./ A;
     reg_C_first = @(A, B, C)  2 * alpha_reg * sum(bsxfun(@times, 1 + B * C, B ./ A), 1);
     reg_C_second = @(A, B, C)  2 * alpha_reg * sum((B .^ 2) ./ A, 1);
-    
-    timer_id = tic;
     
     prevQuality = -1;
     for currIter = 1:maxIterCnt
@@ -123,27 +117,36 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
             %F = bsxfun(@rdivide, C, 1 + B * C);
             %A = (sum(((I + eps) .^ alpha) .* ((F + eps) .^ beta), 2) ./ sum((F + eps) .^ (alpha + beta), 2)) .^ (1 / alpha);
             F = (A * C) ./ (1 + B * C);
-%             A = A - ((1/alpha) * (1 ./ (A + eps_nnz)) .* sum((F .^ beta) .* (F .^ alpha - (I + eps_nnz) .^ alpha), 2) - ...
-%                 alpha_reg * sum(bsxfun(@rdivide, 1 + B * C, A) .^ 2, 2)) ./ ...
-%                 ((1 / alpha) * ((1 ./ (A + eps_nnz)) .^ 2) .* ...
-%                 sum((F .^ beta) .* ((alpha + beta - 1) * (F .^ alpha) - (beta - 1) * ((I + eps_nnz) .^ alpha)), 2) + ...
-%                 2 * alpha_reg * sum(bsxfun(@rdivide, (1 + B * C) .^ 2, A .^ 3), 2));
+
             A = A - ((1/alpha) * (1 ./ (A + eps_nnz)) .* sum(power_my(F, beta) .* (power_my(F, alpha) - power_my(I + eps_nnz, alpha)), 2)) ./ ...
                 ((1 / alpha) * ((1 ./ (A + eps_nnz)) .^ 2) .* ...
                 sum(power_my(F, beta) .* ((alpha + beta - 1) * power_my(F, alpha) - (beta - 1) * power_my(I + eps_nnz, alpha)), 2));
-            A = max(A, eps_nnz);
+            %A = max(A, eps_nnz);
+            
+            if (sum(A < eps_nnz) > 0)
+                for j = 1:length(A)
+                %for j = find(A < eps_nnz)'
+                    A(j) = ternary_search(@(a) nmf_alpha_beta_divergence(I(j, :), a * C ./ (1 + B(j) * C), alpha, beta), eps_nnz, 100, 1e-4);
+                end
+            end
 
             % optimizing C
             F = (A * C) ./ (1 + B * C);
-%             C = C - (sum((1 ./ (eps + A * (C .^ 2))) .* ((F + eps) .^ (beta + 1)) .* ((I + eps) .^ alpha - (F + eps) .^ alpha), 1)) ./ ...
-%                (sum((1 ./ (eps + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((F + eps) .^ beta) .* (((F + eps) .^ alpha) .* (2 * B * C - alpha - beta + 1) - ...
-%                ((I + eps) .^ alpha) .* (2 * B * C - beta + 1)), 1));
+
             C = C - ((1 ./ (alpha * C .^ 2)) .* sum(bsxfun(@times, 1 ./ A, power_my(F, beta + 1) .* (power_my(F, alpha) - power_my(I + eps_nnz, alpha))), 1) + ...
                 reg_C_first(A, B, C)) ./ ...
                 ((1 ./ (alpha * C .^ 2)) .* sum((1 ./ ((1 + B * C) .^ 2)) .* power_my(F, beta) .* (power_my(F, alpha) .* (alpha - 2 * B * C + beta - 1) + ...
                 power_my(I + eps_nnz, alpha) .* (2 * B * C - beta + 1)), 1) + ...
                 reg_C_second(A, B, C));
-            C = max(C, eps_nnz);
+            %C = max(C, eps_nnz);
+
+            if (sum(C < eps_nnz) > 0)
+                for j = 1:length(C)
+                %for j = find(C < eps_nnz)
+                    C(j) = ternary_search(@(c) nmf_alpha_beta_divergence(I(:, j), A * c ./ (1 + B * c), alpha, beta) + ...
+                        alpha_reg * sum(bsxfun(@rdivide, (1 + B * c) .^ 2, A)), eps_nnz, 10000, 1e-4);
+                end
+            end
 
             % optimizing B
             F = (A * C) ./ (1 + B * C);
@@ -152,42 +155,30 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
                 ((1 / alpha) * sum((bsxfun(@rdivide, C, 1 + B * C) .^ 2) .* ...
                 power_my(F, beta) .* ((alpha + beta + 1) * power_my(F, alpha) - (beta + 1) * power_my(I + eps_nnz, alpha)), 2) + ...
                 reg_B_second(A, B, C));
-%             B = B + ((1 / alpha) * (1 ./ (A + eps)) .* sum(((F + eps) .^ (beta + 1)) .* ((I + eps) .^ alpha - (F + eps) .^ alpha), 2)) ./ ...
-%                ((1 / alpha) * sum(bsxfun(@rdivide, C .^ 2, (1 + B * C) .^ 2) .* ((F + eps) .^ beta) .* ((beta + 1) * ((I + eps) .^ alpha) - ...
-%                (alpha + beta + 1) * ((F + eps) .^ alpha)), 2));
-            B = max(B, 0);
+            %B = max(B, 0);
+            if (sum(B < 0) > 0)
+                for j = 1:length(B)
+                %for j = find(B < 0)'
+                    B(j) = ternary_search(@(b) nmf_alpha_beta_divergence(I(j, :), A(j) * C ./ (1 + b * C), alpha, beta) + ...
+                        alpha_reg * sum(sum(bsxfun(@rdivide, (1 + b * C) .^ 2, A(j)))), 0, 100, 1e-4);
+                end
+            end
         end
         
         %if mod(currIter, 1) == 0
         if false
-        % на самом деле это неправильно, берется производная по A
-            %x0 = [Aprev' Bprev' Cprev];
-            %direction = [(A - Aprev)' (B - Bprev)' (C - Cprev)];
-            %ls_res = fminbnd(@(x) line_func(x, x0, direction, I, alpha, beta, alpha_C, alpha_B), 0, 10, optimset('FunValCheck', 'on'));
-            Abig = repmat(A, [1 size(I, 2)]);
-            Bbig = repmat(B, [1 size(I, 2)]);
-            Cbig = repmat(C, [size(I, 1) 1]);
-            
-            Fbig = repmat(A - Aprev, [1 size(I, 2)]);
-            Gbig = repmat(B - Bprev, [1 size(I, 2)]);
-            Hbig = repmat(C - Cprev, [size(I, 1) 1]);
-            
-            tau = linesearch_backtracking(Abig, Bbig, Cbig, Fbig, Gbig, Hbig, I, alpha, beta, alpha_A, alpha_B, alpha_C, 1e-4, 0.5, 1);
+            x0 = [Aprev' Bprev' Cprev];
+            direction = [(A - Aprev)' (B - Bprev)' (C - Cprev)];
+            ls_res = fminbnd(@(x) line_func(x, x0, direction, I, alpha, beta, alpha_C, alpha_B), 0, 10, optimset('FunValCheck', 'on'));
 
-            %X = x0 + ls_res * direction;
-            %A = X(1:size(I, 1))';
-            %B = X((size(I, 1)+1):(2*size(I, 1)))';
-            %C = X((2*size(I, 1) + 1):end);
-            
-            Anew = A + tau * (A - Aprev);
-            Bnew = B + tau * (B - Bprev);
-            Cnew = C + tau * (C - Cprev);
+            X = x0 + ls_res * direction;
+            A = X(1:size(I, 1))';
+            B = X((size(I, 1)+1):(2*size(I, 1)))';
+            C = X((2*size(I, 1) + 1):end);
 
-            if ((sum(Anew < 0) == 0) && (sum(Bnew < 0) == 0) && (sum(Cnew < 0) == 0))
-                A = Anew;
-                B = Bnew;
-                C = Cnew;
-            end
+            A = max(A, 0);
+            B = max(B, 0);
+            C = max(C, 0);
 
             Aprev = A;
             Bprev = B;
@@ -225,27 +216,24 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         %    break;
         %end
         
-        %[A_norm, B_norm, C_norm] = nonlinear_normalize_prod(A, B, C);
+        [A_norm, B_norm, C_norm] = nonlinear_normalize_prod(A, B, C);
         
         %C_mean_hist(currIter) = mean(abs(C - C_prev_iter));
         %C_max_hist(currIter) = max(abs(C - C_prev_iter));
-        %C_max_hist(currIter) = mean(C_norm);
+        C_max_hist(currIter) = mean(C_norm);
         qual_hist(currIter) = currQuality;
-        %B_max_hist(currIter) = mean(B_norm);
-        %A_max_hist(currIter) = mean(A_norm);
-        %corr_B_hist(currIter) = corr(B, quantile(I', 0.9)', 'type', 'Spearman');
+        B_max_hist(currIter) = mean(B_norm);
+        A_max_hist(currIter) = mean(A_norm);
+        corr_B_hist(currIter) = corr(B, quantile(I', 0.9)', 'type', 'Spearman');
         
         %C_test = nonlinear_alpha_beta_fixedAB(I_test, A, B, alpha, beta, maxIterCnt, eps, alpha_reg, 1);
         %test_qual_hist(currIter) = nmf_alpha_beta_divergence(I_test, langmuir_func(A, B, C_test), alpha, beta);
         
-        %fprintf('%d: %f\t%f\t%e\t%e\t%e\n', currIter, currQuality, currQuality_reg,  max(C), max(B), max(A));
+        fprintf('%d: %f\t%f\t%e\t%e\t%e\n', currIter, currQuality, currQuality_reg,  max(C), max(B), max(A));
         %fprintf('%d: %e\n', currIter, C(912));
         
         %C_prev_iter = C;        
     end
-    
-    time = toc(timer_id);
-    iter_cnt = currIter;
     
     isConverged = (currIter < maxIterCnt);
     
@@ -278,14 +266,4 @@ end
 
 function res = power_my(A, p)
     res = exp(p * log(A));
-end
-
-function step_size = linesearch_backtracking(A, B, C, F, G, H, I, alpha, beta, alpha_A, alpha_B, alpha_C, c_param, rho, init_step)
-    step_size = init_step;
-    while (nmf_alpha_beta_divergence(I, ((A + step_size * F) .* (C + step_size * H)) ./ (1 + (B + step_size * G) .* (C + step_size * H)), alpha, beta) > ...
-            nmf_alpha_beta_divergence(I, (A .* C) ./ (1 + B .* C), alpha, beta) + ...
-            c_param * step_size * sum(sum(divergence_diff_summand_line_regvoron_code(step_size, A, B, C, F, G, H, I, alpha, beta, ...
-            alpha_reg))))
-        step_size = step_size * rho;
-    end
 end
