@@ -4,6 +4,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         use_term_criteria = true;
     end
     
+    minIterCnt=50;
     eps_nnz = 1e-12;
         
     %[A B C] = nonlinear_init_als(I, eps);
@@ -215,7 +216,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         %    break;
         %end
         
-        if (use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
+        if (currIter>minIterCnt && use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
         %if (use_term_criteria && currIter > 1 && nonlinear_check_stopping_criteria_C(C, C_prev_iter, 1e-6))
             break;
         end
@@ -238,7 +239,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         %C_test = nonlinear_alpha_beta_fixedAB(I_test, A, B, alpha, beta, maxIterCnt, eps, alpha_reg, 1);
         %test_qual_hist(currIter) = nmf_alpha_beta_divergence(I_test, langmuir_func(A, B, C_test), alpha, beta);
         
-        %fprintf('%d: %f\t%f\t%e\t%e\t%e\n', currIter, currQuality, currQuality_reg,  max(C), max(B), max(A));
+        fprintf('%d: %f\t%f\t%e\t%e\t%e\n', currIter, currQuality, currQuality_reg,  max(C), max(B), max(A));
         %fprintf('%d: %e\n', currIter, C(912));
         
         %C_prev_iter = C;        

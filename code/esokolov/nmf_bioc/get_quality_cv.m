@@ -24,10 +24,10 @@ function [quality_arrays_mad, quality_arrays_ouliers, quality_probes_mad, qualit
         calibrate_model_parallel(sample2, sample2_sliced, inten_genes_idx, factorization_func);
 
     %quality_arrays = sum((Avect1 - Avect2) .^ 2);
-    tmp = Avect1_arrays - Avect2_arrays;
+    tmp = (Avect1_arrays - Avect2_arrays)./(Avect1_arrays + Avect2_arrays);
     tmp = tmp(~isnan(tmp));
     tmp = tmp(~isinf(tmp));
-    quality_arrays_mad = mad_my(tmp, 1);
+    quality_arrays_mad = median(abs(tmp));
     quality_arrays_ouliers = sum(abs(tmp) > 3 * std(tmp));
 
     arrays_factors = {A1_arrays, C1_arrays, Avect1_arrays, A1_slices_arrays, ...
@@ -75,7 +75,7 @@ function [quality_arrays_mad, quality_arrays_ouliers, quality_probes_mad, qualit
     tmp = C1_probes(:) - C2_probes(:);
     tmp = tmp(~isnan(tmp));
     tmp = tmp(~isinf(tmp));
-    quality_probes_mad = mad_my(tmp, 1);
+    quality_probes_mad = median(abs(tmp));
     quality_probes_ouliers = sum(abs(tmp) > 3 * std(tmp));
     
     probes_factors = {A1_probes, C1_probes, Avect1_probes, A1_slices_probes, ...

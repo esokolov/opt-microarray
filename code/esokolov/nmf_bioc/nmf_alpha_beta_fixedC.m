@@ -2,6 +2,7 @@ function [A isConverged] = nmf_alpha_beta_fixedC(I, C, alpha, beta, maxIterCnt, 
     A = nmf_init_als_fixedC(I, C, eps);
     
     eps_nnz = 1e-12;
+    minIterCnt = 50;
     
     prevQuality = -1;
     for currIter = 1:maxIterCnt
@@ -18,7 +19,7 @@ function [A isConverged] = nmf_alpha_beta_fixedC(I, C, alpha, beta, maxIterCnt, 
         end
         
         currQuality = nmf_alpha_beta_divergence(I, A * C, alpha, beta);
-        if (nmf_check_stopping_criteria(I, A, C, currQuality, prevQuality, eps))
+        if (currIter>minIterCnt && nmf_check_stopping_criteria(I, A, C, currQuality, prevQuality, eps))
             break;
         end
         prevQuality = currQuality;

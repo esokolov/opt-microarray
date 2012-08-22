@@ -23,17 +23,17 @@ function [mad_A, outliers_A, mad_B, outliers_B, mad_C, outliers_C...
         nonlinear_calibrate_model(sample2, sample2_sliced, inten_genes_idx, factorization_func, false);
 
     %quality_arrays = sum((Avect1 - Avect2) .^ 2);
-    tmp = Avect1_arrays - Avect2_arrays;
+    tmp = abs(Avect1_arrays - Avect2_arrays) ./ (Avect1_arrays + Avect2_arrays);
     tmp = tmp(~isnan(tmp));
     tmp = tmp(~isinf(tmp));
-    mad_A = mad_my(tmp, 1);
-    outliers_A = sum(abs(tmp) > 3 * std(tmp));
+    mad_A = median(tmp);
+    outliers_A = sum(tmp > 3 * std(tmp));
     
-    tmp = Bvect1_arrays - Bvect2_arrays;
+    tmp = abs(Bvect1_arrays - Bvect2_arrays) ./ (Bvect1_arrays + Bvect2_arrays);
     tmp = tmp(~isnan(tmp));
     tmp = tmp(~isinf(tmp));
-    mad_B = mad_my(tmp, 1);
-    outliers_B = sum(abs(tmp) > 3 * std(tmp));
+    mad_B = median(tmp);
+    outliers_B = sum(tmp > 3 * std(tmp));
 
     arrays_factors = {A1_arrays, B1_arrays, C1_arrays, Avect1_arrays, Bvect1_arrays, A1_slices_arrays, B1_sliced_arrays, ...
         A2_arrays, B2_arrays, C2_arrays, Avect2_arrays, Bvect2_arrays, A2_slices_arrays, B2_sliced_arrays};
@@ -80,7 +80,7 @@ function [mad_A, outliers_A, mad_B, outliers_B, mad_C, outliers_C...
     tmp = C1_probes(:) - C2_probes(:);
     tmp = tmp(~isnan(tmp));
     tmp = tmp(~isinf(tmp));
-    mad_C = mad_my(tmp, 1);
+    mad_C = median(abs(tmp));
     outliers_C = sum(abs(tmp) > 3 * std(tmp));
     
     probes_factors = {A1_probes, B1_probes, C1_probes, Avect1_probes, Bvect1_probes, A1_slices_probes, B1_sliced_probes, ...

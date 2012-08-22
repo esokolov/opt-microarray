@@ -13,6 +13,7 @@ function [C isConverged] = nonlinear_alpha_beta_fixedAB(I, A, B, alpha, beta, ma
     end
     
     eps_nnz = 1e-12;
+    minIterCnt = 50;
         
     %[A B C] = nonlinear_init_als(I, eps);
     
@@ -76,7 +77,7 @@ function [C isConverged] = nonlinear_alpha_beta_fixedAB(I, A, B, alpha, beta, ma
         %    break;
         %end
         
-        if (use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
+        if (currIter>minIterCnt && use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
             break;
         end
         prevQuality = currQuality;

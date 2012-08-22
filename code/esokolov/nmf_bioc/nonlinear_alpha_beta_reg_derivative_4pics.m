@@ -5,6 +5,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
     end
     
     eps_nnz = 1e-12;
+    minIterCnt = 50;
         
     %[A B C] = nonlinear_init_als(I, eps);
     
@@ -193,7 +194,7 @@ function [A B C isConverged qual_hist C_max_hist B_max_hist A_max_hist corr_B_hi
         %    break;
         %end
         
-        if (use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
+        if (currIter>minIterCnt && use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
         %if (use_term_criteria && currIter > 1 && nonlinear_check_stopping_criteria_C(C, C_prev_iter, 1e-6))
             break;
         end
