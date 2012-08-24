@@ -49,9 +49,9 @@ for probeset_idx = 1:probesetsCnt
        % fprintf('%d iterations, %f sec; ', step,time);
     end    
     fprintf('probeset %d: %d arrays omitted completely\n', probeset_idx, length(arrays_omit)); toc;
-    nln_plot_probeset(I,A,B,C,0)
-    suplabel([num2str(sum(sum(W_sliced{probeset_idx}))/numel(W_sliced{probeset_idx})*100), '% probes left, ', num2str(length(arrays_omit)/arraysCnt*100), '% arrays excluded completely'], 't');
-    set(gcf, 'Position', [0 0 1900 1000]);
+%    nln_plot_probeset(I,A,B,C,0)
+%    suplabel([num2str(sum(sum(W_sliced{probeset_idx}))/numel(W_sliced{probeset_idx})*100), '% probes left, ', num2str(length(arrays_omit)/arraysCnt*100), '% arrays excluded completely'], 't');
+%    set(gcf, 'Position', [0 0 1900 1000]);
 %    saveas(gcf, ['nln_plot_probeset/probeset_' int2str(probeset_idx) '_alpha=' int2str(alpha) '_beta=' int2str(beta) '.png'], 'png');
 %    saveas(gcf, ['nln_plot_probeset/probeset_' int2str(probeset_idx) '_alpha=' int2str(alpha) '_beta=' int2str(beta) '.fig'], 'fig');
 end

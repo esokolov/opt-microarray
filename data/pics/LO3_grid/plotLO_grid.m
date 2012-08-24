@@ -1,8 +1,8 @@
 r = 100; % pixels per inch
 for i=1:length(alpha_range)
-    alpha = alpha_range(i);
-    parfor j=1:length(beta_range)
-        beta = beta_range(j);
+    alpha = alpha_range(i)
+    for j=1:length(beta_range)
+        beta = beta_range(j)
         nln_plot_probeset(inten_full_sliced{7},A_all{i,j}(inten_full_idx{7}, 7), B_all{i,j}(inten_full_idx{7}, 7), C_all{i,j}(7,:), 0);
         suplabel(['alpha=' num2str(alpha) ', beta=' num2str(beta)], 't');
         set(gcf, 'PaperUnits', 'inches', 'PaperPosition', [0 0 1900 1000]/r);

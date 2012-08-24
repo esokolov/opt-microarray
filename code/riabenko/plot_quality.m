@@ -1,45 +1,45 @@
 figure;
-subplot(2, 3, 1);
-imagesc(alpha_range, beta_range, goodness_of_fit_fro(:, :)', [min(min(goodness_of_fit_fro(:, :))) 2e6]);
+subplot(1, 3, 1);
+imagesc(alpha_range, beta_range, goodness_of_fit_fro(:, :)', [min(min(goodness_of_fit_fro(:, :))) 1e15]);
 set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
 colorbar('peer',gca);
 xlabel('\alpha');ylabel('\beta');
 title('goodness of fit (frobenius)');
 
-subplot(2, 3, 2);
-imagesc(alpha_range, beta_range, goodness_of_fit_l1(:, :)', [min(min(goodness_of_fit_l1(:, :))) 1e9]);
+subplot(1, 3, 2);
+imagesc(alpha_range, beta_range, goodness_of_fit_l1(:, :)', [min(min(goodness_of_fit_l1(:, :))) 1e6]);
 set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
 colorbar('peer',gca);
 xlabel('\alpha');ylabel('\beta');
 title('goodness of fit (l1)');
 
-subplot(2, 3, 3);
-imagesc(alpha_range, beta_range, goodness_of_fit_weighted(:, :)', [min(min(goodness_of_fit_weighted(:, :))) 1e12]);
+subplot(1, 3, 3);
+imagesc(alpha_range, beta_range, goodness_of_fit_weighted(:, :)', [min(min(goodness_of_fit_weighted(:, :))) 1e15]);
 set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
 colorbar('peer',gca);
 xlabel('\alpha');ylabel('\beta');
 title('goodness of fit (weighted)');
 
-subplot(2, 3, 4);
-imagesc(alpha_range, beta_range, overfitting_fro(:, :)', [-1e4 1e4]);
-set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
-colorbar('peer',gca);
-xlabel('\alpha');ylabel('\beta');
-title('overfitting (frobenius)');
-
-subplot(2, 3, 5);
-imagesc(alpha_range, beta_range, overfitting_l1(:, :)', [-2e5 2e5]);
-set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
-colorbar('peer',gca);
-xlabel('\alpha');ylabel('\beta');
-title('overfitting (l1)');
-
-subplot(2, 3, 6);
-imagesc(alpha_range, beta_range, overfitting_weighted(:, :)', [-1e9 1e9]);
-set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
-colorbar('peer',gca);
-xlabel('\alpha');ylabel('\beta');
-title('overfitting (weighted)');
+% subplot(2, 3, 4);
+% imagesc(alpha_range, beta_range, overfitting_fro(:, :)', [-1e4 1e4]);
+% set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
+% colorbar('peer',gca);
+% xlabel('\alpha');ylabel('\beta');
+% title('overfitting (frobenius)');
+% 
+% subplot(2, 3, 5);
+% imagesc(alpha_range, beta_range, overfitting_l1(:, :)', [-2e5 2e5]);
+% set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
+% colorbar('peer',gca);
+% xlabel('\alpha');ylabel('\beta');
+% title('overfitting (l1)');
+% 
+% subplot(2, 3, 6);
+% imagesc(alpha_range, beta_range, overfitting_weighted(:, :)', [-1e9 1e9]);
+% set(gca,'YDir','normal','XTick',[-2:5],'YTick',[-4:4]);
+% colorbar('peer',gca);
+% xlabel('\alpha');ylabel('\beta');
+% title('overfitting (weighted)');
 %%
 figure
 subplot(2, 2, 1);
