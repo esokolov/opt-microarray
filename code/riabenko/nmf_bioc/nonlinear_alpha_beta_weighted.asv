@@ -5,7 +5,7 @@ end
 tic;
 %[A B C] = nonlinear_init_als(I, eps);
 
-[A C] = nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, eps);
+[A C] = nmf_alpha_beta_w(I, 1, alpha, beta, maxIterCnt, eps);
 
 minIterCnt = 50;
 eps_nnz = 1e-12;
@@ -23,18 +23,18 @@ prevQuality = -1;
 for currIter = 1:maxIterCnt
     if (alpha == 0 && beta == 0)
         F = (A * C) ./ (1 + B * C);
-                     A = exp((1 / size(I, 2)) * sum((log(I + eps_nnz) - log(bsxfun(@rdivide, C, 1 + B * C) + eps_nnz)) .* W, 2));
-                     A = max(A, 0);
+        A = exp((1 / size(I, 2)) * sum((log(I + eps_nnz) - log(bsxfun(@rdivide, C, 1 + B * C) + eps_nnz)) .* W, 2));
+        A = max(A, 0);
         
-                     F = (A * C) ./ (1 + B * C);
-                     C = C + 0.5 * (sum(((1 ./ (eps_nnz + bsxfun(@plus, C, B * (C .^ 2)))) .* (log(I + eps_nnz) - log(F + eps_nnz))) .* W, 1) + alpha_C * C) ./ ...
-                         (sum(((1 ./ (eps_nnz + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((2 * B * C + 1) .* log((I + eps_nnz) ./ (F + eps_nnz)) + 1)) .* W, 1) + alpha_C/2);
-                     C = max(C, 0);
+        F = (A * C) ./ (1 + B * C);
+        C = C + 0.5 * (sum(((1 ./ (eps_nnz + bsxfun(@plus, C, B * (C .^ 2)))) .* (log(I + eps_nnz) - log(F + eps_nnz))) .* W, 1) + alpha_C * C) ./ ...
+            (sum(((1 ./ (eps_nnz + bsxfun(@times, C .^ 2, (1 + B * C) .^ 2))) .* ((2 * B * C + 1) .* log((I + eps_nnz) ./ (F + eps_nnz)) + 1)) .* W, 1) + alpha_C/2);
+        C = max(C, 0);
         
-                     F = (A * C) ./ (1 + B * C);
-                     B = B - 0.5 * (sum((bsxfun(@rdivide, C, 1 + B * C) .* (log(I + eps_nnz) - log(F + eps_nnz))) .* W, 2) + alpha_B * B) ./ ...
-                         (sum((bsxfun(@times, C .^ 2, (1 + B * C) .^ 2) .* (log(F + eps_nnz) - log(I + eps_nnz) + 1), 2) + alpha_B);
-                     B = max(B, 0);
+        F = (A * C) ./ (1 + B * C);
+        B = B - 0.5 * (sum((bsxfun(@rdivide, C, 1 + B * C) .* (log(I + eps_nnz) - log(F + eps_nnz))) .* W, 2) + alpha_B * B) ./ ...
+            (sum((bsxfun(@times, C .^ 2, (1 + B * C) .^ 2) .* (log(F + eps_nnz) - log(I + eps_nnz) + 1)) .* W, 2) + alpha_B);
+        B = max(B, 0);
     elseif (alpha == 0)
         F = (A * C) ./ (1 + B * C);
         A = A - 0.5 * ((1 ./ (A + eps_nnz)) .* sum((((F + eps_nnz) .^ beta) .* log((F + eps_nnz) ./ (I + eps_nnz))) .* W, 2)) ./ ...
@@ -132,7 +132,7 @@ for currIter = 1:maxIterCnt
     %    break;
     %end
     %fprintf('%d: %f\n', currIter, currQuality);
-    %fprintf('%d: %e\n', currIter, C(525));
+    fprintf('%d: %f %e %e %e\n', currIter, currQuality, max(A), max(B), max(C));
     
 end
 

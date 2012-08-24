@@ -5,6 +5,7 @@ end
 tic;
 %[A B C] = nonlinear_init_als(I, eps);
 
+%[A C] = nmf_alpha_beta_weighted(I, W, 1, alpha, beta, maxIterCnt, eps);
 [A C] = nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, eps);
 
 minIterCnt = 50;
@@ -132,7 +133,7 @@ for currIter = 1:maxIterCnt
     %    break;
     %end
     %fprintf('%d: %f\n', currIter, currQuality);
-    %fprintf('%d: %f %e %e\n', currIter, currQuality, A(14), C(36));
+    fprintf('%d: %f %e %e %e\n', currIter, currQuality, max(A), max(B), max(C));
     
 end
 

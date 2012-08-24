@@ -1,8 +1,8 @@
-function [A C isConverged] = nmf_alpha_beta(I, G, alpha, beta, maxIterCnt, eps)
-    [A C] = nmf_init_als(I, G, eps);
-    
+function [A C isConverged] = nmf_alpha_beta(I, G, alpha, beta, maxIterCnt, eps)    
     eps_nnz = 1e-12;
-    minIterCnt = 50;
+    minIterCnt = 50;    
+
+    [A C] = nmf_init_als(I, G, eps_nnz);
     
     prevQuality = -1;
     for currIter = 1:maxIterCnt
@@ -19,12 +19,12 @@ function [A C isConverged] = nmf_alpha_beta(I, G, alpha, beta, maxIterCnt, eps)
         else
             %error('No alpha = 0 please');
             T = A' * bsxfun(@times, bsxfun(@power, A * C + eps_nnz, alpha + beta - 1), ...
-                log(bsxfun(@rdivide, I + eps_nnz, A * C + eps_nnz) + eps_nnz));
+                log(bsxfun(@rdivide, I, A * C + eps_nnz) + eps_nnz));
             T = bsxfun(@rdivide, T + eps_nnz, A' * bsxfun(@power, A * C + eps_nnz, alpha + beta - 1));
             C = bsxfun(@times, C, exp(T));
             
             T = bsxfun(@times, bsxfun(@power, A * C + eps_nnz, alpha + beta - 1), ...
-                log(bsxfun(@rdivide, I + eps_nnz, A * C + eps_nnz) + eps_nnz)) * C';
+                log(bsxfun(@rdivide, I, A * C + eps_nnz) + eps_nnz)) * C';
             T = bsxfun(@rdivide, T + eps_nnz, bsxfun(@power, A * C + eps_nnz, alpha + beta - 1) * C');
             A = bsxfun(@times, A, exp(T));
         end
@@ -36,6 +36,7 @@ function [A C isConverged] = nmf_alpha_beta(I, G, alpha, beta, maxIterCnt, eps)
             break;
         end
         prevQuality = currQuality;
+        %fprintf('%d: %f %e\n', currIter, currQuality, C(1689));
     end
     
     isConverged = (currIter < maxIterCnt);

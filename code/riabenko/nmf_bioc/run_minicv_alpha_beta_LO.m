@@ -1,8 +1,9 @@
+load('/home/affy/model/inten_allarrays_50probesets_bgnorm.mat')
 alpha_range = -2:0.5:5;
 beta_range = -4:0.5:4;
 probesets = 1:25;
 arrays = 1:1000;
-maxIterCnt = 500;
+maxIterCnt = 1000;
 r = 100; % pixels per inch
 A_all = cell(length(alpha_range),length(beta_range));
 B_all = cell(length(alpha_range),length(beta_range));
@@ -32,7 +33,7 @@ for ind = 1:length(alpha_range)*length(beta_range)
     fprintf('Alpha = %f, Beta = %f\n', alpha, beta);
     
     [A, B, C, Avect, Bvect, A_sliced, B_sliced] = nonlinear_calibrate_model_short(inten, inten_sliced, ...
-        inten_idx, @(I) nonlinear_alpha_beta_LO(I, alpha, beta, maxIterCnt, 1e-6, 1));
+        inten_idx, @(I) nonlinear_alpha_beta_LO(I, alpha, beta, maxIterCnt, 1e-5, 1));
     
     corr_B(i, j) = corr(Bvect, quantile(inten(:, 1:end-2)', 0.9)', 'type', 'Spearman');
     
@@ -49,8 +50,8 @@ for ind = 1:length(alpha_range)*length(beta_range)
              goodness_of_fit_fro(i, j), goodness_of_fit_l1(i, j), goodness_of_fit_weighted(i, j),  corr_B(i, j));        
     toc;
     fprintf('\n');
-    save(['alpha_beta_LO_minicv_neg_1000arrays_25probesets_' num2str(alpha - min(alpha_range)) '_' num2str(beta - min(beta_range)) '.mat'],...
-        'goodness_of_fit_fro', 'goodness_of_fit_l1', 'goodness_of_fit_weighted', 'A_all', 'B_all', 'C_all', 'corr_B');
+    save(['alpha_beta_LO_minicv_1000arrays_25probesets_' num2str(alpha - min(alpha_range)) '_' num2str(beta - min(beta_range)) '.mat'],...
+        'alpha_range,' 'beta_range', 'goodness_of_fit_fro', 'goodness_of_fit_l1', 'goodness_of_fit_weighted', 'A_all', 'B_all', 'C_all', 'corr_B');
 
     nln_plot_probeset(inten_sliced{7},A(inten_idx{7},7),B(inten_idx{7},7),C(7,:),0)    
 %    set(gcf, 'Position', [0 0 1900 1000]);
