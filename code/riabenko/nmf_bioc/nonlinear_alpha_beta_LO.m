@@ -26,7 +26,7 @@ for LOIter=1:maxLOIter
     
     [A B C isConverged time step] = nonlinear_alpha_beta_weighted(I, W(probes_keep,arrays_keep), alpha, beta, maxIterCnt, eps, 0, 0, use_term_criteria);
     
-    step
+    fprintf('%d; ',step);
     
     C_long(arrays_keep) = C;
     A_long(probes_keep) = A;
@@ -45,7 +45,7 @@ for LOIter=1:maxLOIter
     bound = quantile(error(W(probes_keep,arrays_keep)==1),0.95);
     W(probes_keep,arrays_keep) = W(probes_keep,arrays_keep).*(error<=bound);
     
-    nln_plot_probeset_weighted
+    %nln_plot_probeset_weighted
     % fprintf('%d iterations, %f sec; ', step,time);
 end
 %fprintf('probeset %d: %d arrays omitted completely\n', probeset_idx, length(arrays_omit));

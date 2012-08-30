@@ -1,4 +1,5 @@
-function [A, B, C, Avect, Bvect, A_sliced, B_sliced] = nonlinear_calibrate_model_short(I, I_sliced, I_genes_idx, factorization_func)
+function [A, B, C, Avect, Bvect, A_sliced, B_sliced] = nonlinear_calibrate_model_short(I, I_sliced, I_genes_idx, ...
+                                                                                    factorization_func, I_test)
 sampleSize = size(I, 2) - 2;
 G = length(I_sliced);
 
@@ -49,7 +50,7 @@ parfor i = 1:G
     %fprintf('%d\n', i);
     fprintf('probeset %d finished; ', i);
 end
-
+fprintf('\n');
 C(isnan(C)) = 0;
 C(isinf(C)) = max(max(C(~isinf(C))));
 
