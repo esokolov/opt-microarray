@@ -1,5 +1,5 @@
 function [A B C isConverged time step] = nonlinear_alpha_beta_weighted(I, W, alpha, beta, maxIterCnt, eps, alpha_C, alpha_B, use_term_criteria)
-if (nargin < 8)
+if (nargin < 9)
     use_term_criteria = true;
 end
 tic;

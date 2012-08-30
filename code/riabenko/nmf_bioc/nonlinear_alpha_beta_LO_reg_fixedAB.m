@@ -31,8 +31,8 @@ for LOIter=1:maxLOIter
     if ~isempty(arrays_omit)
         C_long(arrays_omit) = nonlinear_alpha_beta_fixedAB(inten(probes_keep,arrays_omit), A(probes_keep), B(probes_keep), alpha, beta, maxIterCnt, eps, alpha_C, use_term_criteria);
     end
-    
-    error = (langmuir_func(A,B,C)-I) ./ I .* repmat(C,size(I,1),1);
+
+    error = (langmuir_func(A(probes_keep),B(probes_keep),C)-I) ./ I .* repmat(C,size(I,1),1);
     bound = quantile(error(W(probes_keep,arrays_keep)==1),0.95);
     W(probes_keep,arrays_keep) = W(probes_keep,arrays_keep).*(error<=bound);
     %nln_plot_probeset_weighted
