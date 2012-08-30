@@ -48,7 +48,7 @@ for currIter = 1:maxIterCnt
     
     Q = langmuir_func(A, B, C);
     currQuality = nmf_alpha_beta_divergence(I.*W, Q.*W, alpha, beta);
-    currQuality_reg = nmf_alpha_beta_divergence(I.*W, Q.*W, alpha, beta) + 0.5 * alpha_B * sum(B .^ 2) + 0.5 * alpha_C * sum(C .^ 2);
+    currQuality_reg = nmf_alpha_beta_divergence(I.*W, Q.*W, alpha, beta) + 0.5 * alpha_C * sum(C .^ 2);
 
     if (currIter>minIterCnt && use_term_criteria && nonlinear_check_stopping_criteria(I, Q, currQuality, prevQuality, eps))
         break;

@@ -1,5 +1,5 @@
 function [A, B, C, Avect, Bvect, A_sliced, B_sliced] = nonlinear_calibrate_model_short(I, I_sliced, I_genes_idx, ...
-                                                                                    factorization_func, I_test)
+                                                                                    factorization_func)
 sampleSize = size(I, 2) - 2;
 G = length(I_sliced);
 
