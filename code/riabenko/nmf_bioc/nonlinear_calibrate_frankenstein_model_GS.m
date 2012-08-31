@@ -64,7 +64,7 @@ while goon
         
         fprintf('Factorizing I_test with fixed A...');
         [C_control, control_errors(end+1)] = nonlinear_find_concentrations_witherror(I_control_sliced, A_sliced, B_sliced, ...
-            @(I_arg, A_arg, B_arg) nonlinear_alpha_beta_LO_reg_fixedAB(I_arg, A_arg, B_arg, alpha, beta, maxIterCnt, eps, 10^alpha_Cs(i), 1));
+            @(I_arg, A_arg, B_arg) nonlinear_alpha_beta_LO_reg_fixedAB(I_arg, A_arg, B_arg, alpha, beta, maxIterCnt, eps, 10^x, 1));
         fprintf(' Done\n');    
         
         if ((err_best-control_errors(end))/control_errors(end)>err_eps)||...
@@ -99,3 +99,5 @@ while goon
         end
     end
 end 
+
+x = 1;
