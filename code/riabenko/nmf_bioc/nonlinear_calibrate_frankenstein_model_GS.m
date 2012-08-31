@@ -100,4 +100,3 @@ while goon
     end
 end 
 
-x = 1;

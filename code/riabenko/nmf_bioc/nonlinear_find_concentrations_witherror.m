@@ -6,7 +6,7 @@ function [C totalerror notConvergedCnt] = nonlinear_find_concentrations_witherro
     totalerror = 0;
     
     C = zeros(G, sampleSize);
-    parfor i = 1:G
+    for i = 1:G
         [C(i, :) isConverged finalerror] = factorization_func(I_sliced{i}, A_sliced{i}, B_sliced{i});
         
         notConvergedCnt = notConvergedCnt + ~isConverged;

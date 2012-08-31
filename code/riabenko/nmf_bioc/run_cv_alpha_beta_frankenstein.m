@@ -4,9 +4,9 @@ beta_range = -4:4;
 %beta_range = -2:0.25:4;
 
 mad_A = zeros(length(alpha_range), length(beta_range));
-ouliers_A = zeros(length(alpha_range), length(beta_range));
+outliers_A = zeros(length(alpha_range), length(beta_range));
 mad_B = zeros(length(alpha_range), length(beta_range));
-ouliers_B = zeros(length(alpha_range), length(beta_range));
+outliers_B = zeros(length(alpha_range), length(beta_range));
 C_loo = zeros(length(alpha_range), length(beta_range));
 train_error = zeros(length(alpha_range), length(beta_range));
 test_error = zeros(length(alpha_range), length(beta_range));
@@ -39,11 +39,11 @@ test_size = 200;
 
 %formsamples;
 
-fprintf('Generating partitions...');
-[partition_arrays, partition_probes, partition_probes_compl, partition_probes_sliced, partition_probes_sliced_compl] = ...
-   generate_partitions(inten_train, inten_train_sliced, inten_full_idx);
-fprintf(' Done\n');
-%load('alpha_beta_partition.mat');
+%fprintf('Generating partitions...');
+%[partition_arrays, partition_probes, partition_probes_compl, partition_probes_sliced, partition_probes_sliced_compl] = ...
+%   generate_partitions(inten_train, inten_train_sliced, inten_full_idx);
+%fprintf(' Done\n');
+load('partition_arrays.mat');
 
 maxIterCnt = 1000;
 eps = 1e-5;
@@ -59,7 +59,7 @@ for i = 1:length(alpha_range)
         end
         
         [Abest, Bbest, Cbest, Cbestcontrol, Abestsliced, Bbestsliced, reg_best(i, j), test_error(i, j)] = ...
-            nonlinear_calibrate_frankenstein_model(inten_train, inten_train_sliced, inten_test_sliced, inten_full_idx, ...
+            nonlinear_calibrate_frankenstein_model_GS(inten_train, inten_train_sliced, inten_test_sliced, inten_full_idx, ...
             alpha, beta, maxIterCnt, eps);
         
         for gene_idx = 1:length(inten_train_sliced)
@@ -80,7 +80,7 @@ for i = 1:length(alpha_range)
         
         
         fprintf('Factorizing partitions of I...');
-        [mad_A, outliers_A, mad_B, outliers_B] = ...
+        [mad_A(i, j), outliers_A(i, j), mad_B(i, j), outliers_B(i, j)] = ...
             get_quality_cv_frankenstein(inten_train, inten_train_sliced, inten_full_idx, inten_test_sliced, ...
             partition_arrays, partition_probes, partition_probes_compl, partition_probes_sliced, partition_probes_sliced_compl, ...
             alpha, beta, maxIterCnt, eps, reg_best(i, j));
@@ -104,6 +104,6 @@ for i = 1:length(alpha_range)
         B_sliced_all{i, j} = Bbestsliced;
         
         save('cv_frankenstein_res.mat', 'mad_A', 'outliers_A', 'mad_B', 'outliers_B', 'C_loo', ...
-            'train_error', 'test_error', 'overfitting', 'A_all', 'B_all', 'C_all', 'A_sliced_all', 'B_sliced_all');
+            'train_error', 'test_error', 'overfitting', 'A_all', 'B_all', 'C_all', 'A_sliced_all', 'B_sliced_all', 'reg_best');
     end
 end
