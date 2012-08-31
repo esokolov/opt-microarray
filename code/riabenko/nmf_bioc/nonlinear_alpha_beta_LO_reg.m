@@ -46,6 +46,6 @@ for LOIter=1:maxLOIter
         bound = quantile(error(W(probes_keep,arrays_keep)==1),0.95);
         W(probes_keep,arrays_keep) = W(probes_keep,arrays_keep).*(error<=bound);
     end
-    %nln_plot_probeset_weighted
+    nln_plot_probeset_weighted
     % fprintf('%d iterations, %f sec; ', step,time);
 end

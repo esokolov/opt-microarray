@@ -71,7 +71,7 @@ while goon
         if (control_errors(i)-control_errors(i-1))/control_errors(i-1)>err_eps
             goup = ~goup;
         end
-        if ~goup && (abs(control_errors(i)-control_errors(1))/control_errors(1)<err_eps)
+        if ~goup && ((abs(control_errors(i)-control_errors(1))/control_errors(1)<err_eps)||alpha_Cs(i)<1e-20)
             goup = true;
         end
         if goup
@@ -96,9 +96,9 @@ while goon
                 end
             end
         else
-%             if abs(control_errors(i)-control_errors(1))/control_errors(1)<err_eps
-%                 goon = false;
-%             else
+%              if alpha_Cs(i)<1e-20
+%                  goon = false;
+%              else
                 prevDowns = alpha_Cs(alpha_Cs<alpha_Cs(i));
                 prevDowns = prevDowns(~isinf(prevDowns));
                 if isempty(prevDowns)                    
@@ -119,8 +119,8 @@ while goon
                     else
                         alpha_Cs(i+1) = floor((alpha_Cs(i)+max(prevDowns))/2);
                     end
-                end
-%            end
+%                end
+            end
         end
     end    
     i=i+1;

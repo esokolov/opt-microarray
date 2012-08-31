@@ -55,7 +55,7 @@ for currIter = 1:maxIterCnt
     end
     prevQuality = currQuality;
     %fprintf('%d: %f\n', currIter, currQuality);
-    %fprintf('%d: %f %f %e %e %e\n', currIter, currQuality, currQuality_reg -currQuality,  max(C));
+    fprintf('%d: %f %f %e %e\n', currIter, currQuality, currQuality_reg -currQuality, max(C));
     
 end
 

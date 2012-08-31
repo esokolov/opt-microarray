@@ -48,7 +48,7 @@ parfor i = 1:G
     %A_sliced{i}(isnan(A_sliced{i})) = 0;
     %A_sliced{i}(isinf(A_sliced{i})) = 1e10;
     %fprintf('%d\n', i);
-    fprintf('probeset %d finished; ', i);
+    fprintf('probeset %d finished\n', i);
 end
 fprintf('\n');
 C(isnan(C)) = 0;
