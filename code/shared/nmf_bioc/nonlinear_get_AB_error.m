@@ -23,12 +23,12 @@ function [dist_A, dist_B] = ...
         @(I) nonlinear_alpha_beta_LO_reg(I, alpha, beta, maxIterCnt, eps, reg_best, 1));
 
     tmp = abs(Avect1_arrays - Avect2_arrays) ./ (Avect1_arrays + Avect2_arrays);
-    tmp = tmp(~isnan(tmp));
-    tmp = tmp(~isinf(tmp));
-    dist_A = mean(tmp);
+    %tmp = tmp(~isnan(tmp));
+    %tmp = tmp(~isinf(tmp));
+    dist_A = sum(tmp>0.5)+sum(isnan(tmp))+sum(isinf(tmp));
     
     tmp = abs(Bvect1_arrays - Bvect2_arrays) ./ (Bvect1_arrays + Bvect2_arrays);
-    tmp = tmp(~isnan(tmp));
-    tmp = tmp(~isinf(tmp));
-    dist_B = mean(tmp);        
+    %tmp = tmp(~isnan(tmp));
+    %tmp = tmp(~isinf(tmp));
+    dist_B = sum(tmp>0.5)+sum(isnan(tmp))+sum(isinf(tmp));
 end
