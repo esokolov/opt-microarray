@@ -27,14 +27,14 @@ for i=1:size(I,1)
     else
         scatter(C,I(i,:),'.');
     end
-    %Csort = sort(C);
-    maxC = max(C);%Csort(round(length(C)*0.99));
+    Csort = sort(C);
+    maxC = Csort(round(length(C)*0.99));
     x = 0:(maxC/1000):maxC;    
     y = A(i) * x ./ (1 + B(i) * x);
     plot(x, y,'r');
     title('');
     xlim([0 maxC]);
-    ylim([0 max(I(i,:))]);
+    ylim([0 max(I(i,C<=maxC))]);
     box('on');
     title(['A=', num2str(A(i)), ', B=', num2str(B(i))]);
 end
