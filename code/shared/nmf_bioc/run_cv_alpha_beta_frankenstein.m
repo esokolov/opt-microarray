@@ -9,6 +9,7 @@ mad_B = zeros(length(alpha_range), length(beta_range));
 outliers_B = zeros(length(alpha_range), length(beta_range));
 C_loo = zeros(length(alpha_range), length(beta_range));
 train_error = zeros(length(alpha_range), length(beta_range));
+validation_error = zeros(length(alpha_range), length(beta_range));
 test_error = zeros(length(alpha_range), length(beta_range));
 overfitting = zeros(length(alpha_range), length(beta_range));
 reg_best = zeros(length(alpha_range), length(beta_range));
@@ -58,20 +59,24 @@ for i = 1:length(alpha_range)
             continue;
         end
         
-        [Abest, Bbest, Cbest, Cbestcontrol, Abestsliced, Bbestsliced, reg_best(i, j), test_error(i, j)] = ...
-            nonlinear_calibrate_frankenstein_model_GS(inten_train, inten_train_sliced, inten_test_sliced, inten_full_idx, ...
+        [Abest, Bbest, Cbest, Cbestcontrol, Abestsliced, Bbestsliced, reg_best(i, j), validation_error(i, j)] = ...
+            nonlinear_calibrate_frankenstein_model_GS(inten_train, inten_train_sliced, inten_validation_sliced, inten_full_idx, ...
             alpha, beta, maxIterCnt, eps);
         
-        for gene_idx = 1:length(inten_train_sliced)
-            I = inten_train_sliced{gene_idx};
-            error = (langmuir_func(Abestsliced{gene_idx}, Bbestsliced{gene_idx}, Cbest(gene_idx, :)) - I) ./ ...
-                I .* repmat(Cbest(gene_idx, :), size(I, 1), 1);
-            bound = quantile(error(:), 0.75);
-            W = ones(size(I));
-            W = W .* (error <= bound);
-            train_error(i, j) = train_error(i, j) + ...
-                sum(sum(I .* abs(langmuir_func(Abestsliced{gene_idx}, Bbestsliced{gene_idx}, Cbest(gene_idx, :)) - I) .* W)) / train_size;
-        end
+        train_error(i, j) = quality_functional(inten_train_sliced, Abestsliced, Bbestsliced, Cbest);
+        test_error(i, j) = quality_functional(inten_test_sliced, Abestsliced, Bbestsliced, Cbest);
+        
+        
+%         for gene_idx = 1:length(inten_train_sliced)
+%             I = inten_train_sliced{gene_idx};
+%             error = (langmuir_func(Abestsliced{gene_idx}, Bbestsliced{gene_idx}, Cbest(gene_idx, :)) - I) ./ ...
+%                 I .* repmat(Cbest(gene_idx, :), size(I, 1), 1);
+%             bound = quantile(error(:), 0.75);
+%             W = ones(size(I));
+%             W = W .* (error <= bound);
+%             train_error(i, j) = train_error(i, j) + ...
+%                 sum(sum(I .* abs(langmuir_func(Abestsliced{gene_idx}, Bbestsliced{gene_idx}, Cbest(gene_idx, :)) - I) .* W)) / train_size;
+%         end
         
         overfitting(i, j) = test_error(i, j) - train_error(i, j);
         
@@ -81,7 +86,7 @@ for i = 1:length(alpha_range)
         
         fprintf('Factorizing partitions of I...');
         [mad_A(i, j), outliers_A(i, j), mad_B(i, j), outliers_B(i, j)] = ...
-            get_quality_cv_frankenstein(inten_train, inten_train_sliced, inten_full_idx, inten_test_sliced, ...
+            get_quality_cv_frankenstein(inten_train, inten_train_sliced, inten_full_idx, inten_validation_sliced, ...
             partition_arrays, partition_probes, partition_probes_compl, partition_probes_sliced, partition_probes_sliced_compl, ...
             alpha, beta, maxIterCnt, eps, reg_best(i, j));
         fprintf(' Done\n');
@@ -104,6 +109,7 @@ for i = 1:length(alpha_range)
         B_sliced_all{i, j} = Bbestsliced;
         
         save('cv_frankenstein_res.mat', 'mad_A', 'outliers_A', 'mad_B', 'outliers_B', 'C_loo', ...
-            'train_error', 'test_error', 'overfitting', 'A_all', 'B_all', 'C_all', 'A_sliced_all', 'B_sliced_all', 'reg_best');
+            'train_error', 'validation_error', 'test_error', 'overfitting', 'A_all', 'B_all', 'C_all', ...
+            'A_sliced_all', 'B_sliced_all', 'reg_best');
     end
 end

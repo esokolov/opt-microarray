@@ -1,7 +1,6 @@
-function [qual_A, outliers_A, qual_B, outliers_B] = ...
-        get_quality_cv_frankenstein(inten, inten_sliced, inten_genes_idx, inten_test_sliced, ...
-        partition_arrays, partition_probes, partition_probes_compl, partition_probes_sliced, partition_probes_sliced_compl, ...
-        alpha, beta, maxIterCnt, eps, reg_best)
+function [qual_A, outliers_A] = ...
+        get_quality_cv_rma(inten, inten_sliced, inten_genes_idx, ...
+        partition_arrays)
     
     sampleSize = size(inten, 2) - 2;
     
@@ -15,12 +14,12 @@ function [qual_A, outliers_A, qual_B, outliers_B] = ...
         sample2_sliced{i} = sample2_sliced{i}(:, setdiff(1:sampleSize, partition_arrays));
     end
 
-    fprintf(' 1');
-    [~, ~, ~, Avect1_arrays, Bvect1_arrays] = nonlinear_calibrate_model_short(sample1, sample1_sliced, inten_genes_idx, ...
-        @(I) nonlinear_alpha_beta_LO_reg(I, alpha, beta, maxIterCnt, eps, reg_best, 1));
+    fprintf(' 1');    
+    [~, ~, Avect1_arrays, ~, ~] = ...
+        calibrate_model_parallel(sample1, sample1_sliced, inten_genes_idx, @(I) nmf_rma(I));
     fprintf(' 2');
-    [~, ~, ~, Avect2_arrays, Bvect2_arrays] = nonlinear_calibrate_model_short(sample2, sample2_sliced, inten_genes_idx, ...
-        @(I) nonlinear_alpha_beta_LO_reg(I, alpha, beta, maxIterCnt, eps, reg_best, 1));
+    [~, ~, Avect2_arrays, ~, ~] = ...
+        calibrate_model_parallel(sample2, sample2_sliced, inten_genes_idx, @(I) nmf_rma(I));
 
 %     tmp = Avect1_arrays - Avect2_arrays;
 %     tmp = tmp(~isnan(tmp));
@@ -33,16 +32,6 @@ function [qual_A, outliers_A, qual_B, outliers_B] = ...
     qual_A = sum(tmp > 0.5);
     outliers_A = sum(abs(tmp) > 3 * std(tmp));
     
-%     tmp = Bvect1_arrays - Bvect2_arrays;
-%     tmp = tmp(~isnan(tmp));
-%     tmp = tmp(~isinf(tmp));
-%     mad_B = mad_my(tmp, 1);
-%     outliers_B = sum(abs(tmp) > 3 * std(tmp));    
-    tmp = abs(Bvect1_arrays - Bvect2_arrays) ./ (Bvect1_arrays + Bvect2_arrays);
-    tmp = tmp(~isnan(tmp));
-    tmp = tmp(~isinf(tmp));
-    qual_B = sum(tmp > 0.5);
-    outliers_B = sum(abs(tmp) > 3 * std(tmp));
     
 %     % разбиение по пробам
 %     sample1 = inten(partition_probes, :);

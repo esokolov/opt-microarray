@@ -1,4 +1,4 @@
-function LOO_error = nonlinear_get_LOO_error(inten_sliced, A_sliced, B_sliced, C_full, alpha_C, alpha, beta, maxIterCnt, eps)
+function LOO_error = nmf_rma_get_LOO_error(inten_sliced, A_sliced, C_full)
     OUT_CNT = 5;
 
     LOO_error = 0;
@@ -17,9 +17,8 @@ function LOO_error = nonlinear_get_LOO_error(inten_sliced, A_sliced, B_sliced, C
         for out_num = out_idx %1:size(inten_sliced{i}, 1)
             inten_curr = inten_sliced{i}(setdiff(1:size(inten_sliced{i}, 1), out_num), :);
             A_curr = A_sliced{i}(setdiff(1:size(inten_sliced{i}, 1), out_num));
-            B_curr = B_sliced{i}(setdiff(1:size(inten_sliced{i}, 1), out_num));
-            [A_curr, B_curr] = nonlinear_normalize_prod(A_curr, B_curr, 1);
-            C_curr = nonlinear_alpha_beta_LO_reg_fixedAB(inten_curr, A_curr, B_curr, alpha, beta, maxIterCnt, eps, alpha_C, 1);
+            [A_curr] = nmf_normalize_prod(A_curr, 1);
+            C_curr = nmf_rma_fixedA(inten_curr, A_curr);
             
             C_diff = C_diff + abs(C_curr - C_full(i, :)) ./ (C_curr + C_full(i, :));
             %LOO_error_curr = LOO_error_curr + median(abs(C_curr - C_full(i)));
