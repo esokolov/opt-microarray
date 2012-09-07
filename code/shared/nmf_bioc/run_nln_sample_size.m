@@ -50,10 +50,13 @@ for i = 1:length(train_sizes)
             alpha, beta, maxIterCnt, eps);
         
     train_error(i) = quality_functional(inten_train_sliced, A_sliced, B_sliced, C_train);
+    validation_error(i) = quality_functional(inten_validation_sliced, A_sliced, B_sliced, C_validation);
     
     [C_test, test_error(i)] = nonlinear_find_concentrations_witherror(inten_test_sliced, A_sliced, B_sliced, ...
         @(I_arg, A_arg, B_arg) nonlinear_alpha_beta_LO_reg_fixedAB(I_arg, A_arg, B_arg, ...
         alpha, beta, maxIterCnt, eps, 10^reg_best(i), 1));
+    
+    test_error(i) = quality_functional(inten_test_sliced, A_sliced, B_sliced, C_test);
     
     A_all{i} = A;
     A_sliced_all{i} = A_sliced;
@@ -63,7 +66,7 @@ for i = 1:length(train_sizes)
     C_validation_all{i} = C_validation;
     C_test_all{i} = C_test;
     
-    save('sample_size_frankenshtein', 'train_error', 'test_error', 'validation_error', ...
+    save('sample_size_frankenshtein_1', 'train_error', 'test_error', 'validation_error', ...
         'A_all', 'A_sliced_all', 'B_all', 'B_sliced_all', 'C_train_all', ...
         'C_validation_all', 'C_test_all', 'reg_best', 'arrays_train_all', 'validation_arrays', ...
         'test_arrays');

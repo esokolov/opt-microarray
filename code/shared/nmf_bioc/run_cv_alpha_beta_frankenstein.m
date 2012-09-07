@@ -64,7 +64,8 @@ for i = 1:length(alpha_range)
             alpha, beta, maxIterCnt, eps);
         
         train_error(i, j) = quality_functional(inten_train_sliced, Abestsliced, Bbestsliced, Cbest);
-        test_error(i, j) = quality_functional(inten_test_sliced, Abestsliced, Bbestsliced, Cbest);
+        validation_error(i, j) = quality_functional(inten_validation_sliced, Abestsliced, Bbestsliced, Cbestcontrol);
+        %test_error(i, j) = quality_functional(inten_test_sliced, Abestsliced, Bbestsliced, Cbest);
         
         
 %         for gene_idx = 1:length(inten_train_sliced)

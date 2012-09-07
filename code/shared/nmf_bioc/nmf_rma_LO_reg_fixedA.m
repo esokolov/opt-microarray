@@ -32,7 +32,7 @@ for LOIter=1:maxLOIter
         C_long(arrays_omit) = nmf_rma_fixedA(inten(probes_keep,arrays_omit), A(probes_keep));
     end
 
-    error = (A*C-I) ./ I .* repmat(C,size(I,1),1);
+    error = (A(probes_keep)*C-I) ./ I .* repmat(C,size(I,1),1);
     bound = quantile(error(W(probes_keep,arrays_keep)==1),0.95);
     W(probes_keep,arrays_keep) = W(probes_keep,arrays_keep).*(error<=bound);
     %nln_plot_probeset_weighted
