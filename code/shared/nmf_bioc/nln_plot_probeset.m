@@ -34,7 +34,7 @@ for i=1:size(I,1)
     plot(x, y,'r');
     title('');
     xlim([0 maxC]);
-    ylim([0 max(I(i,C<=maxC))]);
+    ylim([0 max(I(i,C<=maxC))+1]);
     box('on');
     title(['A=', num2str(A(i)), ', B=', num2str(B(i))]);
 end

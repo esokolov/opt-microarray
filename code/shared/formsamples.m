@@ -40,3 +40,31 @@ for i=1:26902
 end
 clear i
 save('train&control_allprobesets.mat','train_size','test_size','test_arrays','arrays_all','inten_test_all','inten_test_all_sliced','inten_train_all','inten_train_all_sliced','inten_full_idx')
+%%
+load('test_arrays_idx.mat');
+load('train_arrays_idx.mat');
+
+train_size = 1000;
+validation_size = 200;
+test_size = 500;
+
+load('/home/affy/model/inten_allarrays_50probesets_bgnorm.mat');
+
+inten_train = zeros(size(inten_full,1),train_size+2);
+inten_train_sliced = inten_full_sliced;
+
+inten_validation = inten_full(:, [validation_arrays end-1 end]);
+inten_validation_sliced = inten_full_sliced;
+
+inten_test = inten_full(:, [test_arrays end-1 end]);
+inten_test_sliced = inten_full_sliced;
+
+for i=1:50
+    inten_test_sliced{i} = inten_full_sliced{i}(:,test_arrays);
+    inten_validation_sliced{i} = inten_full_sliced{i}(:,validation_arrays);
+    inten_train_sliced{i} = inten_full_sliced{i}(:,arrays_train{i});
+    inten_train(inten_full_idx{i},:) = inten_full(inten_full_idx{i},[arrays_train{i} end-1 end]);
+end
+save('train&validation&test_50probesets.mat','train_size','test_size','validation_size',...
+     'test_arrays','validation_arrays','arrays_train', 'inten_train','inten_train_sliced',  ...
+     'inten_validation','inten_validation_sliced','inten_test','inten_test_sliced','inten_full_idx');
