@@ -4,6 +4,7 @@ probesCnt = size(inten,1);
 maxLOIter = 6;
 
 W = ones(size(inten));
+    W(inten>5000 & inten > 10 * repmat(median(inten,2), 1, arraysCnt)) = 0;
 isConverged = 0;
 C_long = zeros(1,arraysCnt);
 
@@ -38,4 +39,4 @@ for LOIter=1:maxLOIter
     %nln_plot_probeset_weighted
     % fprintf('%d iterations, %f sec; ', step,time);
 end
-finalerror = sum(sum(inten .* abs(langmuir_func(A,B,C_long)-inten).*W))/arraysCnt;
+finalerror = sum(sum(inten .* abs(langmuir_func(A,B,C_long)-inten).*W)) / sum(sum( inten .* W));

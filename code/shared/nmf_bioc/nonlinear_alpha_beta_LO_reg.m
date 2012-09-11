@@ -1,10 +1,11 @@
-function [A_long B_long C_long isConverged] = nonlinear_alpha_beta_LO_reg(inten, alpha, beta, maxIterCnt, eps, alpha_C, use_term_criteria)
+function [A_long B_long C_long finalerror] = nonlinear_alpha_beta_LO_reg(inten, alpha, beta, maxIterCnt, eps, alpha_C, use_term_criteria)
 arraysCnt = size(inten,2);
 probesCnt = size(inten,1);
 maxLOIter = 6;
 
 W = ones(size(inten));
-isConverged = 0;
+    W(inten>5000 & inten > 10 * repmat(median(inten,2), 1, arraysCnt)) = 0;
+%isConverged = 0;
 A_long = zeros(probesCnt,1);
 B_long = zeros(probesCnt,1);
 C_long = zeros(1,arraysCnt);
@@ -24,7 +25,7 @@ for LOIter=1:maxLOIter
     I = inten(probes_keep,arrays_keep);
 %    W = W(:,arrays_keep);
     
-    [A B C isConverged time step] = nonlinear_alpha_beta_weighted(I, W(probes_keep,arrays_keep), alpha, beta, maxIterCnt, eps, alpha_C, 0, use_term_criteria);
+    [A B C] = nonlinear_alpha_beta_weighted(I, W(probes_keep,arrays_keep), alpha, beta, maxIterCnt, eps, alpha_C, 0, use_term_criteria);
     
     %fprintf('%d; ',step);
     
@@ -41,11 +42,10 @@ for LOIter=1:maxLOIter
         B_long(probes_omit) = 0;
     end    
     
-    if LOIter<maxLOIter
-        error = (langmuir_func(A,B,C)-I) ./ I .* repmat(C,size(I,1),1);
-        bound = quantile(error(W(probes_keep,arrays_keep)==1),0.95);
-        W(probes_keep,arrays_keep) = W(probes_keep,arrays_keep).*(error<=bound);
-    end
+    error = (langmuir_func(A,B,C)-I) ./ I .* repmat(C,size(I,1),1);
+    bound = quantile(error(W(probes_keep,arrays_keep)==1),0.95);
+    W(probes_keep,arrays_keep) = W(probes_keep,arrays_keep).*(error<=bound);
     %nln_plot_probeset_weighted
     % fprintf('%d iterations, %f sec; ', step,time);
 end
+finalerror = sum(sum(inten .* abs(langmuir_func(A_long,B_long,C_long)-inten).*W)) / sum(sum( inten .* W));

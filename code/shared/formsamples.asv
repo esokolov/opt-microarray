@@ -1,0 +1,89 @@
+train_size = 200;
+test_size = 200;
+test_arrays = randperm(size(inten_full,2)-2);
+test_arrays = sort(test_arrays(1:test_size));
+
+load('/home/affy/model/inten_allarrays_50probesets_bgnorm.mat');
+inten_test = inten_full(:, [test_arrays end-1 end]);
+inten_test_sliced = inten_full_sliced;
+
+inten_train = zeros(size(inten_full,1),train_size+2);
+inten_train_sliced = inten_full_sliced;
+
+arrays = cell(1,50);
+
+for i=1:50
+    inten_test_sliced{i} = inten_full_sliced{i}(:,test_arrays);
+    arrays{i} = pick_arrays(inten_full_sliced{i}(:,setdiff(1:(size(inten_full,2)-2), test_arrays)), train_size);    
+    inten_train_sliced{i} = inten_full_sliced{i}(:,arrays{i});
+    inten_train(inten_full_idx{i},:) = inten_full(inten_full_idx{i},[arrays{i} end-1 end]);
+end
+save('train&control_50probesets.mat','train_size','test_size','test_arrays','arrays','inten_test','inten_test_sliced','inten_train','inten_train_sliced','inten_full_idx')
+%%
+load('/home/affy/model/inten_all.mat');
+inten_test_all = inten_full(:, [test_arrays end-1 end]);
+inten_test_all_sliced = inten_full_sliced;
+
+inten_train_all = zeros(size(inten_full,1),train_size+2);
+inten_train_all_sliced = inten_full_sliced;
+
+arrays_all = cell(1,26902);
+
+for i=1:26902
+    if mod(i,1000)==0
+        i
+    end
+    inten_test_all_sliced{i} = inten_full_sliced{i}(:,test_arrays);
+    arrays_all{i} = pick_arrays(inten_full_sliced{i}(:,setdiff(1:(size(inten_full,2)-2), test_arrays)), train_size);    
+    inten_train_all_sliced{i} = inten_full_sliced{i}(:,arrays_all{i});
+    inten_train_all(inten_full_idx{i},:) = inten_full(inten_full_idx{i},[arrays_all{i} end-1 end]);
+end
+clear i
+save('train&control_allprobesets.mat','train_size','test_size','test_arrays','arrays_all','inten_test_all','inten_test_all_sliced','inten_train_all','inten_train_all_sliced','inten_full_idx')
+%%
+load('test_arrays_idx.mat');
+load('train_arrays_idx.mat');
+
+train_size = 1000;
+validation_size = 200;
+test_size = 500;
+
+load('/home/affy/model/inten_allarrays_50probesets_bgnorm.mat');
+
+inten_train = zeros(size(inten_full,1),train_size+2);
+inten_train_sliced = inten_full_sliced;
+
+inten_validation = inten_full(:, [validation_arrays end-1 end]);
+inten_validation_sliced = inten_full_sliced;
+
+inten_test = inten_full(:, [test_arrays end-1 end]);
+inten_test_sliced = inten_full_sliced;
+
+for i=1:50
+    inten_test_sliced{i} = inten_full_sliced{i}(:,test_arrays);
+    inten_validation_sliced{i} = inten_full_sliced{i}(:,validation_arrays);
+    inten_train_sliced{i} = inten_full_sliced{i}(:,arrays_train{i});
+    inten_train(inten_full_idx{i},:) = inten_full(inten_full_idx{i},[arrays_train{i} end-1 end]);
+end
+save('train&validation&test_50probesets.mat','train_size','test_size','validation_size',...
+     'test_arrays','validation_arrays','arrays_train', 'inten_train','inten_train_sliced',  ...
+     'inten_validation','inten_validation_sliced','inten_test','inten_test_sliced','inten_full_idx');
+ %%
+arrays_train_all = cell(50,1);
+arraysCnt = size(inten_full_sliced{1},2)-2;
+for j=1:50
+    arrays = [];%arrays_train{j};  
+    s = sum(inten_full_sliced{j}(:,setdiff(1:arraysCnt, [test_arrays validation_arrays])));          
+    boundaries = quantile(s, [0 0.05 0.5 0.75 0.9 1]);  
+    for i=1:5
+        Carrays = find(s>=boundaries(i) & s<=boundaries(i+1));
+        pick = randperm(length(Carrays));
+        arrays = [arrays Carrays(pick(1:((i-1)*floor(length(pick)/4))))];
+    end
+    arrays = setdiff(arrays, arrays_train{j});
+    arrays = arrays(1:600);
+    arrays = sort(arrays);
+    arrays_train_all{j}(1:1000) = arrays_train{j};
+    arrays_train_all{j}(1001:length(arrays)+1000) = arrays;
+end
+clear boundaries arraysCnt arrays i j s Carrays pick
