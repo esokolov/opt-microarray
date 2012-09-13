@@ -1,12 +1,10 @@
-alpha_range = 0:4;
-beta_range = -4:4;
+alpha_range = -2:0.5:4;
+beta_range = -4:0.5:4;
 %alpha_range = -2:0.25:2;
 %beta_range = -2:0.25:4;
 
-mad_A = zeros(length(alpha_range), length(beta_range));
-outliers_A = zeros(length(alpha_range), length(beta_range));
-mad_B = zeros(length(alpha_range), length(beta_range));
-outliers_B = zeros(length(alpha_range), length(beta_range));
+rep_a = zeros(length(alpha_range), length(beta_range));
+rep_b = zeros(length(alpha_range), length(beta_range));
 C_loo = zeros(length(alpha_range), length(beta_range));
 train_error = zeros(length(alpha_range), length(beta_range));
 validation_error = zeros(length(alpha_range), length(beta_range));
@@ -20,23 +18,8 @@ C_all = cell(length(alpha_range), length(beta_range));
 A_sliced_all = cell(length(alpha_range), length(beta_range));
 B_sliced_all = cell(length(alpha_range), length(beta_range));
 
-%inten = inten_full;
-%inten_sliced = inten_full_sliced;
-
-% inten = inten_full(:, [1:100 1001:1002]) + 1;
-% inten_sliced = inten_full_sliced;
-% for i = 1:length(inten_sliced)
-%     inten_sliced{i} = inten_sliced{i}(:, 1:100) + 1;
-% end
-% 
-% inten_test = inten_full(:, 901:end) + 1;
-% inten_test_sliced = inten_full_sliced;
-% for i = 1:length(inten_test_sliced)
-%     inten_test_sliced{i} = inten_test_sliced{i}(:, 901:end) + 1;
-% end
-
-train_size = 200;
-test_size = 200;
+train_size = 500;
+test_size = 500;
 
 %formsamples;
 
@@ -55,7 +38,7 @@ for i = 1:length(alpha_range)
         beta = beta_range(j);
         fprintf('Alpha = %f, Beta = %f\n', alpha, beta);
         
-        if (alpha < -beta)
+        if ((alpha < -beta)&&alpha>=0) ||(alpha<0 && beta<0)
             continue;
         end
         

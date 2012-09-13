@@ -33,7 +33,7 @@ for i=1:length(alpha_Cs)
         validation_err_best = validation_errors(i);
         train_err_best = train_err;
         %fprintf('1e%d: %f; %f\t%f\t%f\n', alpha_Cs(i), validation_err_best, max(A_sliced{2}), max(B_sliced{2}), max(C(2,:)));
-        fprintf('1e%d: %f; %f\t%f\t%f\n', alpha_Cs(i), validation_err_best, max(A_sliced{1}), max(B_sliced{1}), max(C(1,:)), max(C_control(1,:)));
+        fprintf('1e%d: %f - %f; %f\t%f\t%f\t%f \n', alpha_Cs(i), train_err_best, validation_err_best, max(A_sliced{1}), max(B_sliced{1}), max(C(1,:)), max(C_control(1,:)));
     end
     if i>1 && validation_errors(i)/validation_errors(i-1)>2
         fprintf('whoop error became too big');
