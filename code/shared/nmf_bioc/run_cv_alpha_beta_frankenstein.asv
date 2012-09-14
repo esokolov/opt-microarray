@@ -18,17 +18,6 @@ C_all = cell(length(alpha_range), length(beta_range));
 A_sliced_all = cell(length(alpha_range), length(beta_range));
 B_sliced_all = cell(length(alpha_range), length(beta_range));
 
-train_size = 500;
-test_size = 500;
-
-%formsamples;
-
-%fprintf('Generating partitions...');
-%[partition_arrays, partition_probes, partition_probes_compl, partition_probes_sliced, partition_probes_sliced_compl] = ...
-%   generate_partitions(inten_train, inten_train_sliced, inten_full_idx);
-%fprintf(' Done\n');
-load('partition_arrays.mat');
-
 maxIterCnt = 1000;
 eps = 1e-5;
 
@@ -42,57 +31,34 @@ for i = 1:length(alpha_range)
             continue;
         end
         
-        [Abest, Bbest, Cbest, Cbestcontrol, Abestsliced, Bbestsliced, reg_best(i, j), validation_error(i, j)] = ...
-            nonlinear_calibrate_frankenstein_model_GS(inten_train, inten_train_sliced, inten_validation_sliced, inten_full_idx, ...
+        [A, B, C, C_val, A_sliced, B_sliced, reg_best(i, j), train_error(i, j), validation_error(i, j), Avect, Bvect] = ...
+            nonlinear_calibrate_frankenstein_model_exh_witherror(inten_train(1:6,:), inten_train_sliced(1), inten_validation_sliced(1), inten_full_idx(1), ...
             alpha, beta, maxIterCnt, eps);
+
+        A_all{i, j} = A;
+        B_all{i, j} = B;
+        C_all{i, j} = C;
         
-        train_error(i, j) = quality_functional(inten_train_sliced, Abestsliced, Bbestsliced, Cbest);
-        validation_error(i, j) = quality_functional(inten_validation_sliced, Abestsliced, Bbestsliced, Cbestcontrol);
-        %test_error(i, j) = quality_functional(inten_test_sliced, Abestsliced, Bbestsliced, Cbest);
+        A_sliced_all{i, j} = A_sliced;
+        B_sliced_all{i, j} = B_sliced;                
         
-        
-%         for gene_idx = 1:length(inten_train_sliced)
-%             I = inten_train_sliced{gene_idx};
-%             error = (langmuir_func(Abestsliced{gene_idx}, Bbestsliced{gene_idx}, Cbest(gene_idx, :)) - I) ./ ...
-%                 I .* repmat(Cbest(gene_idx, :), size(I, 1), 1);
-%             bound = quantile(error(:), 0.75);
-%             W = ones(size(I));
-%             W = W .* (error <= bound);
-%             train_error(i, j) = train_error(i, j) + ...
-%                 sum(sum(I .* abs(langmuir_func(Abestsliced{gene_idx}, Bbestsliced{gene_idx}, Cbest(gene_idx, :)) - I) .* W)) / train_size;
-%         end
-        
+        [C_test, test_error(i,j)] = nonlinear_find_concentrations_witherror(inten_test_sliced(1), A_sliced(1), B_sliced(1), ...
+            @(I_arg, A_arg, B_arg) nonlinear_alpha_beta_LO_reg_fixedAB(I_arg, A_arg, B_arg, ...
+            alpha, beta, maxIterCnt, eps, reg_best(i,j), 1));
+                
         overfitting(i, j) = test_error(i, j) - train_error(i, j);
         
-        C_loo(i, j) = nonlinear_get_LOO_error(inten_train_sliced, Abestsliced, Bbestsliced, Cbest, reg_best(i, j), ...
-            alpha, beta, maxIterCnt, eps);
+        C_loo(i, j) = nonlinear_get_LOO_error(inten_train_sliced(1), A_sliced(1), B_sliced(1), C, reg_best(i, j), ...
+            alpha, beta, maxIterCnt, eps);        
         
+        [~, ~, ~, Avect2, Bvect2] = nonlinear_calibrate_model_witherror(inten_test(1:6,:), inten_test_sliced(1), inten_full_idx(1), ...
+        @(I) nonlinear_alpha_beta_LO_reg(I, alpha, beta, maxIterCnt, eps, reg_best(i,j), 1));
         
-        fprintf('Factorizing partitions of I...');
-        [mad_A(i, j), outliers_A(i, j), mad_B(i, j), outliers_B(i, j)] = ...
-            get_quality_cv_frankenstein(inten_train, inten_train_sliced, inten_full_idx, inten_validation_sliced, ...
-            partition_arrays, partition_probes, partition_probes_compl, partition_probes_sliced, partition_probes_sliced_compl, ...
-            alpha, beta, maxIterCnt, eps, reg_best(i, j));
-        fprintf(' Done\n');
+        rep_a(i, j) = mean((abs(Avect - Avect2)./(Avect + Avect2))>0.5);
         
-        %fprintf('Factorizing I...');
-        %[A, C, Avect, A_sliced, converged_cnt_full(i, j), norm_problems_cnt(i, j)] = calibrate_model_parallel(inten, inten_sliced, ...
-        %    inten_full_idx, @(I) nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, 1e-6));
-        %fprintf(' Done\n');
+        rep_b(i, j) = mean((abs(Bvect - Bvect2)./(Bvect + Bvect2))>0.5);
         
-        %fprintf('Factorizing I_test with fixed A...');
-        %[C_test converged_cnt_fixedA(i, j)] = find_concentrations(inten_test_sliced, A_sliced, ...
-        %    @(I_arg, A_arg) nmf_alpha_beta_fixedA(I_arg, A_arg, alpha, beta, maxIterCnt, 1e-6));
-        %fprintf(' Done\n');
-        
-        A_all{i, j} = Abest;
-        B_all{i, j} = Bbest;
-        C_all{i, j} = Cbest;
-        
-        A_sliced_all{i, j} = Abestsliced;
-        B_sliced_all{i, j} = Bbestsliced;
-        
-        save('cv_frankenstein_res.mat', 'mad_A', 'outliers_A', 'mad_B', 'outliers_B', 'C_loo', ...
+        save('cv_frankenstein_res.mat', 'rep_a', 'rep_b', 'C_loo', 'reg_best',...
             'train_error', 'validation_error', 'test_error', 'overfitting', 'A_all', 'B_all', 'C_all', ...
             'A_sliced_all', 'B_sliced_all', 'reg_best');
     end

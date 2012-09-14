@@ -29,7 +29,7 @@ parfor i = 1:G
     B_sliced{i} = b;
     C(i, :) = conc;
     
-    fprintf('probeset %d finished; ', i);
+%    fprintf('probeset %d finished; ', i);
 end
 fprintf('\n');
 C(isnan(C)) = 0;

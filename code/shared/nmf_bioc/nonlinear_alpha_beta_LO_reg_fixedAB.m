@@ -22,7 +22,7 @@ for LOIter=1:maxLOIter
     
     I = inten(probes_keep,arrays_keep);
     %    W = W(:,arrays_keep);
-    
+        
     [C isConverged time step] = nonlinear_alpha_beta_weighted_fixedAB(I, W(probes_keep,arrays_keep), A(probes_keep), B(probes_keep), alpha, beta, maxIterCnt, eps, alpha_C, use_term_criteria);
     
     %fprintf('%d; ',step);
