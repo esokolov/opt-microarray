@@ -35,7 +35,12 @@ for LOIter=1:maxLOIter
 
     error = (langmuir_func(A(probes_keep),B(probes_keep),C)-I) ./ I .* repmat(C,size(I,1),1);
     bound = quantile(error(W(probes_keep,arrays_keep)==1),0.95);
-    W(probes_keep,arrays_keep) = W(probes_keep,arrays_keep).*(error<=bound);
+    if bound>0
+        W(probes_keep,arrays_keep) = W(probes_keep,arrays_keep).*(error<=bound);
+    else
+        %fprintf('ALL INTENSITIES ARE UNDERESTIMATED');
+        break;
+    end
     %nln_plot_probeset_weighted
     % fprintf('%d iterations, %f sec; ', step,time);
 end

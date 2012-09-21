@@ -5,8 +5,8 @@ end
 tic;
 %[A B C] = nonlinear_init_als(I, eps);
 
-%[A C] = nmf_alpha_beta_weighted(I, W, 1, alpha, beta, maxIterCnt, eps);
-[A C] = nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, eps);
+[A C] = nmf_alpha_beta_weighted(I, W, 1, alpha, beta, maxIterCnt, eps);
+%[A C] = nmf_alpha_beta(I, 1, alpha, beta, maxIterCnt, eps);
 
 minIterCnt = 50;
 eps_nnz = 1e-12;

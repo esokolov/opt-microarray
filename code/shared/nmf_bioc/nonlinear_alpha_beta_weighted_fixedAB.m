@@ -4,7 +4,9 @@ if (nargin < 10)
 end
 tic;
 
-C = nmf_alpha_beta_fixedA(I, A, alpha, beta, maxIterCnt, eps);
+%C = nmf_alpha_beta_fixedA(I, A, alpha, beta, maxIterCnt, eps);
+C = nmf_alpha_beta_fixedA_weighted(I, W, A, alpha, beta, maxIterCnt, eps);
+
 
 minIterCnt = 50;
 eps_nnz = 1e-12;

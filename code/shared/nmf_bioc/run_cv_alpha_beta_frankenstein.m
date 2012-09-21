@@ -1,4 +1,4 @@
-alpha_range = -2:0.5:4;
+alpha_range = -4:0.5:4;
 beta_range = -4:0.5:4;
 %alpha_range = -2:0.25:2;
 %beta_range = -2:0.25:4;
@@ -27,7 +27,7 @@ for i = 1:length(alpha_range)
         beta = beta_range(j);
         fprintf('Alpha = %f, Beta = %f\n', alpha, beta);
         
-        if ((alpha < -beta)&&alpha>=0) ||(alpha<0 && beta<0)
+        if ((alpha < -beta)&&alpha>=0) ||(alpha<0 && beta<0) 
             continue;
         end
         
@@ -58,7 +58,7 @@ for i = 1:length(alpha_range)
         
         rep_b(i, j) = mean((abs(Bvect - Bvect2)./(Bvect + Bvect2))>0.5);
         
-        save('cv_frankenstein_res.mat', 'rep_a', 'rep_b', 'C_loo', 'reg_best',...
+        save('cv_frankenstein_res_goodinit.mat', 'rep_a', 'rep_b', 'C_loo', 'reg_best',...
             'train_error', 'validation_error', 'test_error', 'overfitting', 'A_all', 'B_all', 'C_all', ...
             'A_sliced_all', 'B_sliced_all', 'reg_best');
     end

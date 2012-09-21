@@ -11,16 +11,16 @@ train_err_best = Inf;
 for i=1:length(alpha_Cs)
     fprintf('reg=%e: ', 10^alpha_Cs(i));
     
-    fprintf('Factorizing I...');
+    fprintf('Factorizing I...\n');
     [A, B, C, Avect, Bvect, A_sliced, B_sliced, train_err] = nonlinear_calibrate_model_witherror(I_train, ...
         I_train_sliced, I_genes_inx, ...
         @(I) nonlinear_alpha_beta_LO_reg(I, alpha, beta, maxIterCnt, eps, 10^alpha_Cs(i), 1));
-    fprintf(' Done\n');
+    %fprintf(' Done\n');
     
-    fprintf('Factorizing I_test with fixed A...');
+    fprintf('Factorizing I_test with fixed A...\n');
     [C_control, validation_errors(i)] = nonlinear_find_concentrations_witherror(I_control_sliced, A_sliced, B_sliced, ...
         @(I_arg, A_arg, B_arg) nonlinear_alpha_beta_LO_reg_fixedAB(I_arg, A_arg, B_arg, alpha, beta, maxIterCnt, eps, 10^alpha_Cs(i), 1));
-    fprintf(' Done\n');
+    %fprintf(' Done\n');
     
     if ((validation_err_best-validation_errors(i))/validation_errors(i)>err_eps)
         Abest = A;
@@ -37,8 +37,8 @@ for i=1:length(alpha_Cs)
         %fprintf('1e%d: %f; %f\t%f\t%f\n', alpha_Cs(i), validation_err_best, max(A_sliced{2}), max(B_sliced{2}), max(C(2,:)));
         fprintf('1e%d: %f - %f; %f\t%f\t%f\t%f \n', alpha_Cs(i), train_err_best, validation_err_best, max(A_sliced{2}), max(B_sliced{2}), max(C(2,:)), max(C_control(2,:)));
     end
-    if i>1 && validation_errors(i)/validation_errors(i-1)>2
-        fprintf('whoop error became too big');
+    if i>1 && validation_errors(i)/validation_errors(i-1)>1.5
+        fprintf('iteration stopped - error became too big\n');
         break
     end
 end

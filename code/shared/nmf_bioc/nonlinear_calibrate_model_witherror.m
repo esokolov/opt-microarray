@@ -31,7 +31,7 @@ parfor i = 1:G
     
 %    fprintf('probeset %d finished; ', i);
 end
-fprintf('\n');
+%fprintf('\n');
 C(isnan(C)) = 0;
 C(isinf(C)) = max(max(C(~isinf(C))));
 
